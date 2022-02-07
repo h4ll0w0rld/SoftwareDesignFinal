@@ -1,15 +1,23 @@
 #CarOverview {
-    width: 50px;
+    width: 900px;
     margin-left: auto;
     margin-right: auto;
 }
 
+#login_register {
+    float: right;
+}
+
 .carDiv {
-    background-color: cadetblue;
-    margin: 10px;
-    width: 300px;
-    height: 200px;
-    margin-bottom: 60px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 700px;
+    height: 500px;
+    padding-bottom: 200px;
+}
+
+#innerDiv {
+    background-color: #5D8AA6;
 }
 
 .carImg {

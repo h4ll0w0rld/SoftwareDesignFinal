@@ -18,13 +18,12 @@
     <button onclick="showCar(CarSharing.getCarSharingIni().getCar())">Show Cars</button>
     <div id="login_register"></div>
     <div id="CarOverview">
-        <input type="text" id="searchInput">
+        <label for="searchInput">Suche</label>
+        <input type="text" id="searchInput" onclick="showCar()">
+        <label for="driveType">Elektrisch</label>
+        <input type="checkbox" id="driveType">
         <div id="innerDiv"></div>
     </div>
-    <select name="" id="">
-        <option value="ff">erste</option>
-        <option value="ff">zweite</option>
-    </select>
 
 
 

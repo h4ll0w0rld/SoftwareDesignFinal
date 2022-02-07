@@ -5,7 +5,7 @@ let admin = new Admin("nilsderAdmin", "12345");
 //CarSharing.getCarSharingIni().addUser(admin);
 //let userArray: LoggedInUser[] = new Array(user1, user2);
 let carSharingApp = CarSharing.getCarSharingIni();
-//sessionStorage.setItem("user", JSON.stringify(user1));
+let testCar;
 if (!sessionStorage.getItem("user")) {
     sessionStorage.setItem("user", JSON.stringify(user1));
 }
@@ -153,6 +153,40 @@ function showAddCarForm() {
     document.body.append(carForm);
     carForm.append(modelLabel, modelInput, driveTypeLabel, driveTypeInput, earliestUsableTimeLabel, earliestUsableTimeInput, latestUsageTimeLabel, latestUsageTimeInput, maxUseTimeLabel, maxUseTimeInput, flatRateLabel, flatRateInput, pricePerMinuteLabel, pricePerMinuteInput);
 }
+function showBokkingForm(_carDiv, _car) {
+    console.log("allllllooooo");
+    let form = document.createElement("form");
+    let labelYear = document.createElement("label");
+    let labelMonth = document.createElement("label");
+    let labelDay = document.createElement("label");
+    labelYear.innerHTML = "Jahr: ";
+    labelMonth.innerHTML = "Monat: ";
+    labelDay.innerHTML = "Tag: ";
+    let inputYear = document.createElement("input");
+    let inputMonth = document.createElement("input");
+    let inputDay = document.createElement("input");
+    let labelTime = document.createElement("label");
+    labelTime.innerHTML = "Time: ";
+    let timeInput = document.createElement("input");
+    let labelDuration = document.createElement("label");
+    labelDuration.innerHTML = "Dauer:";
+    let durationInput = document.createElement("input");
+    durationInput.setAttribute("type", "number");
+    let sumbittBttn = document.createElement("button");
+    sumbittBttn.innerHTML = "Verfügbarkeit prüfen";
+    _carDiv.append(form);
+    sumbittBttn.addEventListener("click", function () {
+        let dateBeginn = new Date(inputYear.value + "-" + inputMonth.value + "-" + inputDay.value + "T" + timeInput.value);
+        console.log("Es begggginnnnt :" + dateBeginn);
+        let inputTime = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(durationInput.value)) };
+        let car = new Car(_car.modelDescription, _car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime, _car.flateRate, _car.pricePerMinute);
+        if (car.isFreeAt(inputTime)) {
+            console.log("Das Auto ist im Zeitraum von " + inputTime.begin + "bis" + inputTime.end + "Verfügbar! ");
+        }
+    });
+    _carDiv.append(labelYear, inputYear, labelMonth, inputMonth, labelDay, inputDay, labelTime, timeInput, labelDuration, durationInput, sumbittBttn);
+    return false;
+}
 function showCar(_car) {
     let div = document.getElementById("CarOverview");
     let innerDiv = document.getElementById("innerDiv");
@@ -164,17 +198,23 @@ function showCar(_car) {
             innerDiv.removeChild(innerDiv.firstChild);
         showCar(await CarSharing.getCarSharingIni().searchCar(searchInput.value));
     }, false);
-    for (let i = 0; i < _car.length; i++) {
-        let header = document.createElement("h2");
-        let carDiv = document.createElement("div");
-        let carImg = document.createElement("img");
-        carDiv.setAttribute("class", "carDiv");
-        carImg.setAttribute("class", "carImg");
-        header.setAttribute("class", "carHeader");
-        carImg.src = _car[i].image;
-        header.innerHTML = _car[i].modelDescription;
-        carDiv.append(header, carImg);
-        innerDiv.append(carDiv);
+    if (_car) {
+        for (let i = 0; i < _car.length; i++) {
+            let header = document.createElement("h2");
+            let carDiv = document.createElement("div");
+            let carImg = document.createElement("img");
+            carDiv.setAttribute("class", "carDiv");
+            carImg.setAttribute("class", "carImg");
+            header.setAttribute("class", "carHeader");
+            carImg.addEventListener("click", function clickEvent() {
+                showBokkingForm(carDiv, _car[i]);
+                this.removeEventListener("click", clickEvent);
+            });
+            carImg.src = _car[i].image;
+            header.innerHTML = _car[i].modelDescription;
+            carDiv.append(header, carImg);
+            innerDiv.append(carDiv);
+        }
     }
 }
 //# sourceMappingURL=main.js.map

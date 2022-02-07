@@ -85,6 +85,11 @@ var Role;
     Role[Role["LOGGEDINUSER"] = 1] = "LOGGEDINUSER";
     Role[Role["ADMIN"] = 2] = "ADMIN";
 })(Role || (Role = {}));
+class BookingDate {
+    date;
+    time;
+    duration;
+}
 class Car {
     uuid;
     modelDescription;
@@ -94,9 +99,9 @@ class Car {
     maxUseTime;
     flateRate;
     pricePerMinute;
-    bookings;
+    planedDrive;
     image;
-    //TODO add image string
+    //TODO add image string   
     constructor(_modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute) {
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
@@ -117,47 +122,58 @@ class Car {
         this.pricePerMinute = _pricePerMinute;
         // this.image = _image;
     }
-    isFree(_date) {
-        if (this.bookings) {
-            let newBooking = new Array(this.bookings.length);
-            for (let i = 0; i < newBooking.length; i++) {
-                if (i < newBooking.length)
-                    newBooking[i] = this.bookings[i];
+    addDrive(_drive) {
+        if (this.planedDrive) {
+            let newDrivingData = new Array(this.planedDrive.length);
+            for (let i = 0; i < newDrivingData.length; i++) {
+                if (i < newDrivingData.length)
+                    newDrivingData[i] = this.planedDrive[i];
                 else
-                    newBooking[i] = _date;
+                    newDrivingData[i] = _drive;
             }
-            this.bookings = newBooking;
-            return false;
-        }
-        else {
-            this.bookings = new Array(_date);
-        }
-        return true;
-    }
-    bookCar(_date) {
-        if (this.bookings) {
-            let newBooking = new Array(this.bookings.length);
-            for (let i = 0; i < newBooking.length; i++) {
-                if (i < newBooking.length)
-                    newBooking[i] = this.bookings[i];
-                else
-                    newBooking[i] = _date;
-            }
-            this.bookings = newBooking;
         }
         else
-            this.bookings = new Array(_date);
-        CarSharing.getCarSharingIni().updateCarList;
+            this.planedDrive = new Array(_drive);
+    }
+    isFreeAt(_time) {
+        if (this.planedDrive) {
+            for (let i = 0; i < this.planedDrive.length; i++) {
+                //If given Time is inbetween an already exisiting Time return = false 
+                if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime())
+                    return false;
+                //Timeslot is available return = true
+                else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime())
+                    return false;
+                else if (_time.begin <= this.planedDrive[i].begin && _time.end >= this.planedDrive[i].end)
+                    return false;
+            }
+        }
+        return true;
     }
 }
 class Drive {
     dateOfBooking;
     duration;
-    car;
 }
 class DrivingData {
     planedDrive;
     pastDrive;
+    constructor() {
+    }
+    addDrive() {
+    }
+    isFreeAt(_time) {
+        for (let i; i < this.planedDrive.length; i++) {
+            //If given Time is inbetween an already exisiting Time return = false 
+            if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime())
+                return false;
+            else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime())
+                return false;
+            //Timeslot is available return = true
+            else
+                return true;
+        }
+    }
 }
 class User {
     role;

@@ -1,3 +1,4 @@
+
 class CarSharing {
 
 
@@ -142,6 +143,13 @@ enum DriveType {
 enum Role {
     USER, LOGGEDINUSER, ADMIN
 }
+class BookingDate {
+
+    date: string;
+    time: String;
+    duration: number;
+
+}
 
 
 
@@ -156,11 +164,11 @@ class Car {
     flateRate: number;
     pricePerMinute: number;
 
-    bookings: Date[];
+    planedDrive: IDriveData[];
     image: string;
-    
-    //TODO add image string
-    constructor(_modelDescription: string, _driveType:DriveType,_earliestUsableTime:number,_latestUsageTime:number,_maxUseTime:number,_flateRate:number, _pricePerMinute:number) {
+
+    //TODO add image string   
+    constructor(_modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number) {
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
         this.earliestUsableTime = _earliestUsableTime;
@@ -168,10 +176,10 @@ class Car {
         this.maxUseTime = _maxUseTime;
         this.flateRate = _flateRate;
         this.pricePerMinute = _pricePerMinute;
-       // this.image = _image;
+        // this.image = _image;
 
     }
-    constructorWithUUID(_uuid:string,_modelDescription: string, _driveType:DriveType,_earliestUsableTime:number,_latestUsageTime:number,_maxUseTime:number,_flateRate:number, _pricePerMinute:number) {
+    constructorWithUUID(_uuid: string, _modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number) {
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
         this.earliestUsableTime = _earliestUsableTime;
@@ -179,62 +187,82 @@ class Car {
         this.maxUseTime = _maxUseTime;
         this.flateRate = _flateRate;
         this.pricePerMinute = _pricePerMinute;
-       // this.image = _image;
+
+        // this.image = _image;
 
     }
-    isFree(_date: Date): boolean {
 
-        if (this.bookings) {
-            let newBooking: Date[] = new Array(this.bookings.length)
-            for (let i: number = 0; i < newBooking.length; i++) {
-                if (i < newBooking.length) newBooking[i] = this.bookings[i];
-                else newBooking[i] = _date;
 
+    addDrive(_drive: IDriveData): void {
+        if (this.planedDrive) {
+            let newDrivingData: IDriveData[] = new Array(this.planedDrive.length);
+            for (let i: number = 0; i < newDrivingData.length; i++) {
+                if (i < newDrivingData.length) newDrivingData[i] = this.planedDrive[i];
+                else newDrivingData[i] = _drive;
             }
-            this.bookings = newBooking;
-            return false;
+        } else this.planedDrive = new Array(_drive);
+    }
 
-        } else {
-            this.bookings = new Array(_date);
+
+    isFreeAt(_time: IDriveData): boolean {
+
+        if (this.planedDrive) {
+
+            for (let i: number = 0; i < this.planedDrive.length; i++) {
+
+                //If given Time is inbetween an already exisiting Time return = false 
+                if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime()) return false;
+                
+                //Timeslot is available return = true
+                else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime()) return false;
+
+
+                else if (_time.begin <= this.planedDrive[i].begin && _time.end >= this.planedDrive[i].end) return false;
+            }
         }
-        return true
-
-
-    }
-    bookCar(_date: Date) {
-        if (this.bookings) {
-            let newBooking: Date[] = new Array(this.bookings.length)
-            for (let i: number = 0; i < newBooking.length; i++) {
-                if (i < newBooking.length) newBooking[i] = this.bookings[i];
-                else newBooking[i] = _date;
-
-            }
-            this.bookings = newBooking;
-
-
-        } else this.bookings = new Array(_date);
-
-        CarSharing.getCarSharingIni().updateCarList;
-
-
+        return true;
 
     }
+
+
 
 }
 
+interface IDriveData {
+    begin: Date;
+    end: Date;
+}
 
 
 class Drive {
-    dateOfBooking: Date;
+    dateOfBooking: IDriveData;
     duration: number;
-    car: Car;
+    // car: Car;
 }
 
 
 
 class DrivingData {
-    planedDrive: Drive[];
-    pastDrive: Drive[];
+    planedDrive: IDriveData[];
+    pastDrive: IDriveData[];
+
+    constructor() {
+
+    }
+    addDrive() {
+
+    }
+    isFreeAt(_time: IDriveData) {
+
+        for (let i: number; i < this.planedDrive.length; i++) {
+            //If given Time is inbetween an already exisiting Time return = false 
+            if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime()) return false;
+            else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime()) return false;
+            //Timeslot is available return = true
+            else return true;
+        }
+
+    }
 
 
 }
