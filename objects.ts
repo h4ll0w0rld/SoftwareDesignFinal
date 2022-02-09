@@ -1,14 +1,17 @@
 
+
 class CarSharing {
 
 
     private user: LoggedInUser[];
     private car: Car[];
+    currentUser: User | LoggedInUser | Admin;
 
 
     private static carSharingInstance: CarSharing = new CarSharing;
 
     private constructor() {
+
 
 
     }
@@ -21,6 +24,33 @@ class CarSharing {
 
     public setUser(_user: LoggedInUser[]) {
         this.user = _user;
+    }
+    public setCurrentUser(_user: User | LoggedInUser | Admin) {
+        this.currentUser = _user;
+        console.log(_user);
+        sessionStorage.setItem("user", JSON.stringify(_user));
+        console.log(sessionStorage.getItem("user"));
+
+    }
+    public getCurrentUser(): User | LoggedInUser | Admin {
+
+
+        if (!this.currentUser) {
+            if (sessionStorage.getItem("user")) this.currentUser = JSON.parse(sessionStorage.getItem("user"));
+            else this.currentUser = new User();
+
+        }
+
+        return this.currentUser;
+
+    }
+
+
+    public logOutCurrentUser() {
+
+        this.currentUser = new User();
+        sessionStorage.setItem("user", JSON.stringify(new User()));
+        window.location.reload();
     }
 
 
@@ -40,8 +70,18 @@ class CarSharing {
 
         console.log("user" + _user.userName);
         addData(_user);
+        this.updateUserList();
 
     }
+
+    addCar(_car:Car): void {
+
+        console.log("adding Car" + _car);
+        addData(_car);
+        this.updateCarList();
+
+    }
+
     async updateUserList(): Promise<void> {
 
         this.user = <LoggedInUser[]>await getData("User");
@@ -49,10 +89,33 @@ class CarSharing {
 
 
     }
+
     async updateCarList(): Promise<void> {
 
         this.car = <Car[]>await getData("Car");
         console.log("Car Update");
+
+    }
+
+    async verifyUsername(_user: LoggedInUser): Promise<boolean> {
+        console.log("verifiing");
+
+        if (!this.user) {
+            await this.updateUserList();
+        }
+        var regExAlphanumeric: RegExp = new RegExp("^[a-z0-9]+$");
+        if (!regExAlphanumeric.test(_user.userName)) return false;
+        //RegEx for charackters
+
+        for (let i: number = 0; i < this.user.length; i++) {
+            if (this.user[i].userName === _user.userName) {
+                console.log("USSSSER ALLREADY THERE")
+                return false;
+            }
+
+        }
+
+        return true;
 
 
     }
@@ -69,13 +132,37 @@ class CarSharing {
 
 
         for (let i: number = 0; i < this.user.length; i++) {
-            if (this.user[i].userName == _userInput.userName && this.user[i].password == _userInput.password) {
+            if (this.user[i].userName === _userInput.userName && this.user[i].password === _userInput.password) {
+                console.log("User name und passwort stimmen")
 
                 return true;
+
+
             }
         }
 
         return false;
+
+    }
+    async isAdmin(_userInput: LoggedInUser) {
+
+        if (!this.user) {
+            await this.updateUserList();
+        }
+
+
+        for (let i: number = 0; i < this.user.length; i++) {
+            if (this.user[i].userName == _userInput.userName && this.user[i].role == Role.ADMIN) {
+
+
+                return true;
+
+
+            }
+        }
+
+        return false;
+
 
     }
 
@@ -87,9 +174,9 @@ class CarSharing {
             await this.updateUserList();
         }
 
-        //Check with RegEx
+
         for (let i: number = 0; i < this.user.length; i++) {
-            if (this.user[i].userName == _userInput.userName) {
+            if (this.user[i].userName === _userInput.userName) {
 
                 return false;
             }
@@ -99,15 +186,39 @@ class CarSharing {
 
 
     }
+    getCarWithDriveType(){
+        console.log("HEy i get called");
 
+    }
+
+    async getAvailableCar(_date:Date):Promise<Car[]>{
+
+        if(!this.car) await this.updateCarList();
+
+        let availableCar:Car[] = new Array();
+        
+        for(let i:number = 0; i< this.car.length; i++){
+            for(let e:number = 0; e<this.car[i].planedDrive.length; e++){
+
+                if(_date >= this.car[i].planedDrive[e].begin && _date <= this.car[i].planedDrive[e].end) break;
+                else availableCar[i] = this.car[i];
+
+            }
+           
+        }
+        return availableCar;
+
+    }
+
+  
 
     async searchCar(_car: string): Promise<Car[]> {
 
         var reg = new RegExp(_car, "gi");
         let foundCars: Car[] = new Array(this.car.length);
 
-        if (!this.user) {
-            await this.updateUserList();
+        if (!this.car) {
+            await this.updateCarList();
         }
         let e: number = 0;
         for (let i: number = 0; i < this.car.length; i++) {
@@ -125,9 +236,6 @@ class CarSharing {
 
         }
         return finalCar;
-
-
-
 
 
     }
@@ -155,6 +263,7 @@ class BookingDate {
 
 
 class Car {
+
     uuid: string;
     modelDescription: string;
     driveType: DriveType;
@@ -168,7 +277,7 @@ class Car {
     image: string;
 
     //TODO add image string   
-    constructor(_modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number) {
+    constructor(_modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number, _image: string) {
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
         this.earliestUsableTime = _earliestUsableTime;
@@ -176,7 +285,7 @@ class Car {
         this.maxUseTime = _maxUseTime;
         this.flateRate = _flateRate;
         this.pricePerMinute = _pricePerMinute;
-        // this.image = _image;
+        this.image = _image;
 
     }
     constructorWithUUID(_uuid: string, _modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number) {
@@ -199,8 +308,11 @@ class Car {
             for (let i: number = 0; i < newDrivingData.length; i++) {
                 if (i < newDrivingData.length) newDrivingData[i] = this.planedDrive[i];
                 else newDrivingData[i] = _drive;
+
             }
         } else this.planedDrive = new Array(_drive);
+        console.log(this.planedDrive);
+        CarSharing.getCarSharingIni().updateCarList();
     }
 
 
@@ -210,10 +322,10 @@ class Car {
 
             for (let i: number = 0; i < this.planedDrive.length; i++) {
 
-                //If given Time is inbetween an already exisiting Time return = false 
+                //If given Time is inbetween or arround an already exisiting Time return = false 
                 if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime()) return false;
-                
-                //Timeslot is available return = true
+
+
                 else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime()) return false;
 
 
@@ -223,6 +335,23 @@ class Car {
         return true;
 
     }
+
+    
+
+    checkDuration(_time: IDriveData): boolean {
+        let durationInMillis: number = _time.end.getTime() - _time.begin.getTime();
+        let durationInMin: number = (durationInMillis / 1000) / 60;
+
+        if (durationInMin >= this.maxUseTime) return false;
+        return true;
+
+    }
+    checkUseTime(_time: IDriveData) {
+        if (_time.begin.getTime() <= this.latestUsageTime && this.latestUsageTime >= this.earliestUsableTime) return true;
+        return false;
+
+    }
+
 
 
 
@@ -284,7 +413,8 @@ class User {
         if (await carShare.checkLogin(_user)) {
             sessionStorage.setItem("user", JSON.stringify(_user));
             console.log("Login succesful");
-            showLogin();
+            window.location.reload();
+            //showLogin();
         }
 
 
@@ -342,6 +472,7 @@ class LoggedInUser extends User {
 
 class Admin extends LoggedInUser {
     constructor(_userName: string, _password: string) {
+
         super(_userName, _password);
         this.role = Role.ADMIN;
 

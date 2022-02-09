@@ -1,6 +1,6 @@
 #CarOverview {
-    width: 900px;
     margin-left: auto;
+    float: left;
     margin-right: auto;
 }
 
@@ -8,16 +8,25 @@
     float: right;
 }
 
+#filter {
+    padding-bottom: 10px;
+}
+
 .carDiv {
+    background-color: #5D8AA6;
     margin-left: auto;
     margin-right: auto;
     width: 700px;
     height: 500px;
-    padding-bottom: 200px;
+    padding-bottom: 150px;
 }
 
-#innerDiv {
+#innerDiv {}
+
+#login_register {
+    width: 200px;
     background-color: #5D8AA6;
+    padding: 20px;
 }
 
 .carImg {

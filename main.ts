@@ -1,33 +1,28 @@
 
+
 let user1: User = new User();
 let user2: LoggedInUser = new LoggedInUser("DerTester", "sicher:(");
-let admin: Admin = new Admin("nilsderAdmin", "12345");
+let admin: Admin = new Admin("admin", "admin");
 //CarSharing.getCarSharingIni().addUser(admin);
 //let userArray: LoggedInUser[] = new Array(user1, user2);
 let carSharingApp: CarSharing = CarSharing.getCarSharingIni();
+//console.log(carSharingApp.getCurrentUSer())
 
 let testCar: Car;
 
+//CarSharing.getCarSharingIni().setCurrentUser(admin);
 
 
 
 
 
+///sessionStorage.setItem("user", JSON.stringify(user1));
 
 
 
-if (!sessionStorage.getItem("user")) {
-    sessionStorage.setItem("user", JSON.stringify(user1));
+let currentUser: any = CarSharing.getCarSharingIni().getCurrentUser();
 
-}
-let currentUser: any = JSON.parse(sessionStorage.getItem("user"));
-if (currentUser.role == Role.ADMIN) {
-    console.log("ein admiiiin");
-    let addCarBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-    addCarBttn.innerHTML = "Auto Hinzufügen"
-    addCarBttn.addEventListener("click", showAddCarForm);
-    document.body.append(addCarBttn);
-}
+
 
 carSharingApp.startApp();
 
@@ -37,18 +32,27 @@ let user: LoggedInUser = new LoggedInUser("nilssss", "wildeTests");
 //addData(car);
 //console.log(carSharingApp.getUser())
 let date: Date = new Date("December 17, 1995 03:24:00");
-new Date();
 
 
-//let loginButton: HTMLButtonElement = <HTMLButtonElement>document.getElementById("Log_In_Button");
-//loginButton.addEventListener("klick", showLogin);
+
+
 loginOption();
 function loginOption() {
-    console.log("starting ")
-    let currentUser = JSON.parse(sessionStorage.getItem("user"));
+
+    let currentUser: User | LoggedInUser | Admin = CarSharing.getCarSharingIni().getCurrentUser();
+    //TODO del
     console.log(currentUser);
-    if (!currentUser.userName) {
-        console.log("user is currently not logged in");
+    if (currentUser.role == Role.ADMIN) {
+
+        let addCarBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+        addCarBttn.innerHTML = "Auto Hinzufügen"
+        addCarBttn.addEventListener("click", showAddCarForm);
+        let div: HTMLDivElement = <HTMLDivElement>document.getElementById("menu");
+        div.append(addCarBttn);
+    }
+    if (currentUser.role == Role.USER) {
+
+
         let logginButton: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
         let loginDiv: HTMLDivElement = <HTMLDivElement>document.getElementById("login_register");
         logginButton.addEventListener("click", showLogin);
@@ -56,34 +60,55 @@ function loginOption() {
         loginDiv.append(logginButton);
 
     }
+    if (currentUser.role == Role.LOGGEDINUSER || currentUser.role == Role.ADMIN) {
+
+        let logOutBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+        logOutBttn.innerHTML = "Abmelden";
+        logOutBttn.addEventListener("click", CarSharing.getCarSharingIni().logOutCurrentUser);
+
+        let loginDiv: HTMLDivElement = <HTMLDivElement>document.getElementById("login_register");
+        loginDiv.append(logOutBttn);
+        console.log("User logged Out");
+    }
 }
 //showLogin();
 async function showLogin() {
 
 
     let loginDiv: HTMLDivElement = <HTMLDivElement>document.getElementById("login_register");
+
     while (loginDiv.firstChild) loginDiv.removeChild(loginDiv.firstChild);
 
     let headline: HTMLHeadingElement = <HTMLHeadingElement>document.createElement("h1");
     headline.innerHTML = "Willkommen beim Login";
+
     let form: HTMLFormElement = <HTMLFormElement>document.createElement("form");
     form.setAttribute("id", "loginForm");
+
     let labelName: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     labelName.innerHTML = "Username : "
+
     let inputName: HTMLInputElement = <HTMLInputElement>document.createElement("input");
     inputName.setAttribute("name", "username");
 
 
     let labelPasswort: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     labelPasswort.innerHTML = "Password"
+
     let inputPasswort: HTMLInputElement = <HTMLInputElement>document.createElement("input");
     inputPasswort.setAttribute("type", "password")
     inputPasswort.setAttribute("name", "password");
+
     let submittButton: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-    submittButton.setAttribute("type", "button");
     submittButton.setAttribute("id", "submittLoginBttn");
+    submittButton.innerHTML = "Bestätigen";
 
     let registerBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+    registerBttn.innerHTML = "Registrieren";
+    registerBttn.setAttribute("type", "button");
+
+
+    //-------------------------Events-------------------------------
     registerBttn.addEventListener("click", showRegister);
 
 
@@ -91,10 +116,18 @@ async function showLogin() {
 
         let form: HTMLFormElement = <HTMLFormElement>document.getElementById("loginForm")
         let formData = new FormData(form);
-        let loggedInUser: LoggedInUser = new LoggedInUser(<string>formData.get("username"), <string>formData.get("password"))
+        let loggedInUser: LoggedInUser | Admin = new LoggedInUser(<string>formData.get("username"), <string>formData.get("password"))
         console.log("Username : " + loggedInUser.userName + " Password : " + loggedInUser.password);
-        let currentUser: User = JSON.parse(localStorage.getItem("user"));
-        User.login(loggedInUser);
+        if (await CarSharing.getCarSharingIni().isAdmin(loggedInUser)) loggedInUser = new Admin(loggedInUser.userName, loggedInUser.password);
+
+
+
+        if (await CarSharing.getCarSharingIni().checkLogin(loggedInUser)) {
+
+            CarSharing.getCarSharingIni().setCurrentUser(loggedInUser);
+            console.log("User is now logged in");
+            window.location.reload();
+        }
     });
 
     form.append(headline, labelName, inputName, labelPasswort, inputPasswort, submittButton, registerBttn);
@@ -106,42 +139,71 @@ async function showLogin() {
 function showRegister() {
 
     let loginDiv: HTMLDivElement = <HTMLDivElement>document.getElementById("login_register");
+
+    //Clearing loginDiv to show only register HTML
     while (loginDiv.firstChild) loginDiv.removeChild(loginDiv.firstChild);
+
 
     let headline: HTMLHeadingElement = <HTMLHeadingElement>document.createElement("h1");
     headline.innerHTML = "Wilkommen bei der Registrierung";
+
     let form: HTMLFormElement = <HTMLFormElement>document.createElement("form");
     form.setAttribute("id", "loginForm");
+
     let labelName: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     labelName.innerHTML = "Username : "
+
     let inputName: HTMLInputElement = <HTMLInputElement>document.createElement("input");
     inputName.setAttribute("name", "username");
 
 
     let labelPasswort: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     labelPasswort.innerHTML = "Password"
+
     let inputPasswort: HTMLInputElement = <HTMLInputElement>document.createElement("input");
     inputPasswort.setAttribute("type", "password")
     inputPasswort.setAttribute("name", "password");
+
     let submittButton: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
     submittButton.setAttribute("type", "button");
     submittButton.setAttribute("id", "submittLoginBttn");
+    submittButton.innerHTML = "Registrieren";
+
+
     submittButton.addEventListener("click", async function () {
+
         let form: HTMLFormElement = <HTMLFormElement>document.getElementById("loginForm")
         let formData = new FormData(form);
-        let loggedInUser: LoggedInUser = new LoggedInUser(<string>formData.get("username"), <string>formData.get("password"))
-        console.log("Username : " + loggedInUser.userName + " Password : " + loggedInUser.password);
-        // let currentUser: User = JSON.parse(localStorage.getItem("user"));
-        User.register(loggedInUser);
+        let loggedInUser: LoggedInUser = new LoggedInUser(<string>formData.get("username"), <string>formData.get("password"));
+
+        //-----------------Prove Username------------------------
+        if (await CarSharing.getCarSharingIni().verifyUsername(loggedInUser)) {
+
+            CarSharing.getCarSharingIni().setCurrentUser(loggedInUser);
+            User.register(loggedInUser);
+            window.location.reload();
+
+        }
+        else console.log("UserName is not valid");
+
     })
+
+
     form.append(headline, labelName, inputName, labelPasswort, inputPasswort, submittButton);
     loginDiv.append(form);
 
 
 
 }
-//showAddCarForm()
+
+
+
+
 function showAddCarForm() {
+    
+    let div: HTMLDivElement = <HTMLDivElement>document.getElementById("add_Car");
+    while (div.firstChild) div.removeChild(div.firstChild);
+
     let carForm: HTMLFormElement = <HTMLFormElement>document.createElement("form");
 
     let modelLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
@@ -149,27 +211,21 @@ function showAddCarForm() {
     modelInput.setAttribute("name", "model");
     modelLabel.innerHTML = "Modellbezeichnung: ";
 
-
     let driveTypeLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     let driveTypeInput: HTMLSelectElement = <HTMLSelectElement>document.createElement("select");
     driveTypeInput.setAttribute("name", "driveType");
 
-
     let optionElectric: HTMLOptionElement = <HTMLOptionElement>document.createElement("option");
-
     let optionConv: HTMLOptionElement = <HTMLOptionElement>document.createElement("option");
     optionConv.setAttribute("value", "Conv");
     optionConv.appendChild(document.createTextNode("Conventional"))
     driveTypeInput.appendChild(optionConv);
 
-
     optionElectric.setAttribute("value", "Electric");
     optionElectric.appendChild(document.createTextNode("Electric"))
     driveTypeInput.appendChild(optionElectric);
-
-
-
     driveTypeLabel.innerHTML = "Antriebsart: ";
+
 
     let earliestUsableTimeLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     let earliestUsableTimeInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
@@ -196,78 +252,144 @@ function showAddCarForm() {
     pricePerMinuteLabel.innerHTML = "Preis pro Minute: ";
     pricePerMinuteInput.setAttribute("name", "pricePerMinute");
 
+    let imageLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
+    let imageInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+    imageInput.setAttribute("name", "imageLink");
+    imageLabel.innerHTML = "Bildlink: ";
+
+
     let submittBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
-    submittBttn.addEventListener("klick", function () {
-        //TODO TESTEN !!!!!!
-        let newCar: Car = new Car(<string>carForm.get("model"), carForm.get("driveType"), carForm.get("earliestUsableTime"), carForm.get("latestUsageTime"), carForm.get("maxUseTime"), carForm.get("flatRate"), carForm.get("pricePerMinute"));
+    submittBttn.innerHTML = "Bestätigen";
+    submittBttn.setAttribute("type", "button");
+
+    //--------------------Event------------------------------------
+
+    submittBttn.addEventListener("click", async function () {
+
+        let formData: FormData = new FormData(carForm);
+
+        let driveType: DriveType = DriveType.ELECTRIC;
+        if (formData.get("driveType") === "Conv") driveType = DriveType.CONVENTIONAL;
+
+
+        let newCar: Car = new Car(<string>formData.get("model"), driveType, parseFloat(<string>formData.get("earliestUsableTime")), parseFloat(<string>formData.get("latestUsageTime")), parseFloat(<string>formData.get("maxUseTime")), parseFloat(<string>formData.get("flatRate")), parseFloat(<string>formData.get("pricePerMinute")), <string>formData.get("imageLink"));
+
+        CarSharing.getCarSharingIni().addCar(newCar);
     })
-    document.body.append(carForm);
-    carForm.append(modelLabel, modelInput, driveTypeLabel, driveTypeInput, earliestUsableTimeLabel, earliestUsableTimeInput, latestUsageTimeLabel, latestUsageTimeInput, maxUseTimeLabel, maxUseTimeInput, flatRateLabel, flatRateInput, pricePerMinuteLabel, pricePerMinuteInput);
+
+
+    document.body.append(div);
+    div.append(carForm);
+
+    carForm.append(modelLabel, modelInput, driveTypeLabel, driveTypeInput, earliestUsableTimeLabel, earliestUsableTimeInput, latestUsageTimeLabel, latestUsageTimeInput, maxUseTimeLabel, maxUseTimeInput, flatRateLabel, flatRateInput, pricePerMinuteLabel, pricePerMinuteInput, imageLabel, imageInput, submittBttn);
 }
 
 
 function showBokkingForm(_carDiv: HTMLDivElement, _car: Car) {
-    console.log("allllllooooo");
-
 
     let form: HTMLFormElement = <HTMLFormElement>document.createElement("form");
-    let labelYear: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
-    let labelMonth: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
+
+    form.setAttribute("id", "booking_form");
+
     let labelDay: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
-    labelYear.innerHTML = "Jahr: ";
-    labelMonth.innerHTML = "Monat: "
     labelDay.innerHTML = "Tag: "
-    let inputYear: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-    let inputMonth: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-    let inputDay: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+
+    let inputDate: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+    inputDate.setAttribute("type", "date");
 
     let labelTime: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     labelTime.innerHTML = "Time: ";
+
     let timeInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
+    timeInput.setAttribute("type", "time");
+    timeInput.setAttribute("id", "time_input");
+
 
     let labelDuration: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     labelDuration.innerHTML = "Dauer:"
 
     let durationInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
-    durationInput.setAttribute("type","number" );
+    durationInput.setAttribute("type", "number");
 
     let sumbittBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
     sumbittBttn.innerHTML = "Verfügbarkeit prüfen";
     _carDiv.append(form);
-    sumbittBttn.addEventListener("click", function (){
-        let dateBeginn = new Date(inputYear.value+"-"+inputMonth.value+"-"+inputDay.value +"T"+timeInput.value);
-        console.log("Es begggginnnnt :"+dateBeginn);
-        let inputTime:IDriveData = {begin:dateBeginn, end:new Date(dateBeginn.getTime() +60000*parseFloat(durationInput.value))} as IDriveData;
-        
-        let car:Car = new Car(_car.modelDescription,_car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime,_car.flateRate, _car.pricePerMinute);
-        if(car.isFreeAt(inputTime)){
-            console.log("Das Auto ist im Zeitraum von "+inputTime.begin + "bis" + inputTime.end + "Verfügbar! ");
-        }
-       
 
 
+    sumbittBttn.addEventListener("click", function () {
 
-    } )
+        if (inputDate.value && timeInput.value && durationInput.value) {
 
-    _carDiv.append(labelYear,inputYear, labelMonth, inputMonth, labelDay, inputDay, labelTime, timeInput, labelDuration, durationInput, sumbittBttn);
+            let dateBeginn = new Date(inputDate.value + "T" + timeInput.value);
+            let inputTime: IDriveData = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(durationInput.value)) } as IDriveData;
+
+            showSearchResults(_car, inputTime);
+
+        } else console.log("Invalid Input");
+
+    })
+
+    _carDiv.append(labelDay, inputDate, labelTime, timeInput, labelDuration, durationInput, sumbittBttn);
     return false;
 }
 
 
+
+async function showSearchResults(_car: Car, _time: IDriveData) {
+
+
+    let car: Car = new Car(_car.modelDescription, _car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime, _car.flateRate, _car.pricePerMinute, _car.image);
+    if (!car.isFreeAt(_time)) {
+        console.log("Das Auto ist in diesem Zeitraum schon gebucht.");
+        return;
+    } console.log
+    if (!car.checkDuration(_time)) {
+        console.log("Das Auto kann nicht solange gebucht werden");
+        return;
+    }
+    if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.LOGGEDINUSER || CarSharing.getCarSharingIni().getCurrentUser().role == Role.ADMIN) {
+
+        let bookingBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
+
+        let form: HTMLFormElement = <HTMLFormElement>document.getElementById("booking_form");
+        bookingBttn.innerHTML = "Jetzt Buchen";
+        bookingBttn.setAttribute("type", "button");
+
+        bookingBttn.addEventListener("click", function () {
+            car.addDrive(_time);
+            while (form.firstChild) form.removeChild(form.firstChild);
+
+
+        });
+
+        form.append(bookingBttn);
+
+
+
+    } else if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.USER) {
+        showLogin();
+    }
+
+}
+
 function showCar(_car: Car[]) {
 
+    let innerDiv: HTMLDivElement = <HTMLDivElement>document.getElementById("innerDiv");
+    while (innerDiv.firstChild) innerDiv.removeChild(innerDiv.firstChild);
 
     let div: HTMLDivElement = <HTMLDivElement>document.getElementById("CarOverview");
-    let innerDiv: HTMLDivElement = <HTMLDivElement>document.getElementById("innerDiv");
-
     div.append(innerDiv);
+
     let searchInput: HTMLInputElement = <HTMLInputElement>document.getElementById("searchInput");
     searchInput.setAttribute("name", "searchInput");
+
+
     searchInput.addEventListener("change", async function () {
 
-        while (innerDiv.firstChild) innerDiv.removeChild(innerDiv.firstChild);
+       
 
         showCar(await CarSharing.getCarSharingIni().searchCar(searchInput.value));
+
     }, false);
 
     if (_car) {
@@ -282,6 +404,7 @@ function showCar(_car: Car[]) {
 
             carImg.addEventListener("click", function clickEvent() {
                 showBokkingForm(carDiv, _car[i]);
+                console.log(_car);
                 this.removeEventListener("click", clickEvent);
 
             })

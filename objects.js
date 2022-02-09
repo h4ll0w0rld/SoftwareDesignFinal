@@ -2,6 +2,7 @@
 class CarSharing {
     user;
     car;
+    currentUser;
     static carSharingInstance = new CarSharing;
     constructor() {
     }
@@ -10,6 +11,26 @@ class CarSharing {
     getCar() { return this.car; }
     setUser(_user) {
         this.user = _user;
+    }
+    setCurrentUser(_user) {
+        this.currentUser = _user;
+        console.log(_user);
+        sessionStorage.setItem("user", JSON.stringify(_user));
+        console.log(sessionStorage.getItem("user"));
+    }
+    getCurrentUser() {
+        if (!this.currentUser) {
+            if (sessionStorage.getItem("user"))
+                this.currentUser = JSON.parse(sessionStorage.getItem("user"));
+            else
+                this.currentUser = new User();
+        }
+        return this.currentUser;
+    }
+    logOutCurrentUser() {
+        this.currentUser = new User();
+        sessionStorage.setItem("user", JSON.stringify(new User()));
+        window.location.reload();
     }
     startApp() {
         this.updateCarList();
@@ -20,6 +41,12 @@ class CarSharing {
     addUser(_user) {
         console.log("user" + _user.userName);
         addData(_user);
+        this.updateUserList();
+    }
+    addCar(_car) {
+        console.log("adding Car" + _car);
+        addData(_car);
+        this.updateCarList();
     }
     async updateUserList() {
         this.user = await getData("User");
@@ -29,13 +56,42 @@ class CarSharing {
         this.car = await getData("Car");
         console.log("Car Update");
     }
+    async verifyUsername(_user) {
+        console.log("verifiing");
+        if (!this.user) {
+            await this.updateUserList();
+        }
+        var regExAlphanumeric = new RegExp("^[a-z0-9]+$");
+        if (!regExAlphanumeric.test(_user.userName))
+            return false;
+        //RegEx for charackters
+        for (let i = 0; i < this.user.length; i++) {
+            if (this.user[i].userName === _user.userName) {
+                console.log("USSSSER ALLREADY THERE");
+                return false;
+            }
+        }
+        return true;
+    }
     async checkLogin(_userInput) {
         console.log("Checking User...");
         if (!this.user) {
             await this.updateUserList();
         }
         for (let i = 0; i < this.user.length; i++) {
-            if (this.user[i].userName == _userInput.userName && this.user[i].password == _userInput.password) {
+            if (this.user[i].userName === _userInput.userName && this.user[i].password === _userInput.password) {
+                console.log("User name und passwort stimmen");
+                return true;
+            }
+        }
+        return false;
+    }
+    async isAdmin(_userInput) {
+        if (!this.user) {
+            await this.updateUserList();
+        }
+        for (let i = 0; i < this.user.length; i++) {
+            if (this.user[i].userName == _userInput.userName && this.user[i].role == Role.ADMIN) {
                 return true;
             }
         }
@@ -46,19 +102,35 @@ class CarSharing {
         if (!this.user) {
             await this.updateUserList();
         }
-        //Check with RegEx
         for (let i = 0; i < this.user.length; i++) {
-            if (this.user[i].userName == _userInput.userName) {
+            if (this.user[i].userName === _userInput.userName) {
                 return false;
             }
         }
         return true;
     }
+    getCarWithDriveType() {
+        console.log("HEy i get called");
+    }
+    async getAvailableCar(_date) {
+        if (!this.car)
+            await this.updateCarList();
+        let availableCar = new Array();
+        for (let i = 0; i < this.car.length; i++) {
+            for (let e = 0; e < this.car[i].planedDrive.length; e++) {
+                if (_date >= this.car[i].planedDrive[e].begin && _date <= this.car[i].planedDrive[e].end)
+                    break;
+                else
+                    availableCar[i] = this.car[i];
+            }
+        }
+        return availableCar;
+    }
     async searchCar(_car) {
         var reg = new RegExp(_car, "gi");
         let foundCars = new Array(this.car.length);
-        if (!this.user) {
-            await this.updateUserList();
+        if (!this.car) {
+            await this.updateCarList();
         }
         let e = 0;
         for (let i = 0; i < this.car.length; i++) {
@@ -102,7 +174,7 @@ class Car {
     planedDrive;
     image;
     //TODO add image string   
-    constructor(_modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute) {
+    constructor(_modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute, _image) {
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
         this.earliestUsableTime = _earliestUsableTime;
@@ -110,7 +182,7 @@ class Car {
         this.maxUseTime = _maxUseTime;
         this.flateRate = _flateRate;
         this.pricePerMinute = _pricePerMinute;
-        // this.image = _image;
+        this.image = _image;
     }
     constructorWithUUID(_uuid, _modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute) {
         this.modelDescription = _modelDescription;
@@ -134,14 +206,15 @@ class Car {
         }
         else
             this.planedDrive = new Array(_drive);
+        console.log(this.planedDrive);
+        CarSharing.getCarSharingIni().updateCarList();
     }
     isFreeAt(_time) {
         if (this.planedDrive) {
             for (let i = 0; i < this.planedDrive.length; i++) {
-                //If given Time is inbetween an already exisiting Time return = false 
+                //If given Time is inbetween or arround an already exisiting Time return = false 
                 if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime())
                     return false;
-                //Timeslot is available return = true
                 else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime())
                     return false;
                 else if (_time.begin <= this.planedDrive[i].begin && _time.end >= this.planedDrive[i].end)
@@ -149,6 +222,18 @@ class Car {
             }
         }
         return true;
+    }
+    checkDuration(_time) {
+        let durationInMillis = _time.end.getTime() - _time.begin.getTime();
+        let durationInMin = (durationInMillis / 1000) / 60;
+        if (durationInMin >= this.maxUseTime)
+            return false;
+        return true;
+    }
+    checkUseTime(_time) {
+        if (_time.begin.getTime() <= this.latestUsageTime && this.latestUsageTime >= this.earliestUsableTime)
+            return true;
+        return false;
     }
 }
 class Drive {
@@ -185,7 +270,8 @@ class User {
         if (await carShare.checkLogin(_user)) {
             sessionStorage.setItem("user", JSON.stringify(_user));
             console.log("Login succesful");
-            showLogin();
+            window.location.reload();
+            //showLogin();
         }
     }
     static async register(_user) {
