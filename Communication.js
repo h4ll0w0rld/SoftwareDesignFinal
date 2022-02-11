@@ -13,6 +13,16 @@ async function addData(_data) {
     await fetch(url, { method: "get" });
     console.log("Data has bin transmitted");
 }
+async function updateCarDB(_car) {
+    let query = new URLSearchParams(_car);
+    let url = refUrl + "/updateOne" + "?" + _car.uuid + "&" + query;
+    await fetch(url, { method: "get" });
+}
+async function saveBooking(_booking) {
+    let query = new URLSearchParams(_booking);
+    let url = refUrl + "/saveBooking" + "?" + query;
+    await fetch(url, { method: "get" });
+}
 async function getData(_dataType) {
     let url = refUrl;
     if (_dataType == "User")
@@ -21,6 +31,7 @@ async function getData(_dataType) {
         url += "/getCar";
     let response = await (await fetch(url, { method: "get" })).text();
     let userData;
+    let finalCar;
     let carData;
     if (_dataType == "User") {
         userData = JSON.parse(response);
@@ -28,7 +39,11 @@ async function getData(_dataType) {
     if (_dataType == "Car") {
         console.log("getting asked");
         carData = JSON.parse(response);
+        finalCar = new Array(carData.length);
+        for (let i = 0; i < carData.length; i++) {
+            finalCar[i] = new Car(carData[i]._id, carData[i].modelDescription, carData[i].driveType, carData[i].earliestUsableTime, carData[i].latestUsageTime, carData[i].maxUseTime, carData[i].flateRate, carData[i].pricePerMinute, carData[i].image);
+        }
     }
-    return userData || carData;
+    return userData || finalCar;
 }
 //# sourceMappingURL=Communication.js.map

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Http = require("http");
 const Url = require("url");
 const Mongo = require("mongodb");
+const bson_1 = require("bson");
 let mongoCollection;
 let dataBaseUrl = "mongodb+srv://admin:hallodasistmeincluster@cluster0.0enhn.mongodb.net/CarShare?retryWrites=true&w=majority";
 let port = Number(process.env.PORT);
@@ -45,6 +46,18 @@ async function handleRequest(_request, _response) {
         console.log("searching for Cars...");
         await connectRoDatabase(dataBaseUrl, "Car");
         _response.write(JSON.stringify(await (mongoCollection.find().toArray())));
+        _response.end();
+    }
+    else if (refUrl.pathname == "/updateOne") {
+        console.log("updating....");
+        let id = refUrl.searchParams.get("uuid");
+        var objectId = new bson_1.ObjectID(id);
+        await connectRoDatabase(dataBaseUrl, "Car");
+        mongoCollection.updateOne({ "_id": objectId }, { $set: url.query });
+    }
+    else if (refUrl.pathname == "/saveBooking") {
+        await connectRoDatabase(dataBaseUrl, "Bookings");
+        mongoCollection.insertOne(url.query);
         _response.end();
     }
 }

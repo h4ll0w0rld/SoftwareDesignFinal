@@ -25,6 +25,7 @@ class CarSharing {
     public setUser(_user: LoggedInUser[]) {
         this.user = _user;
     }
+
     public setCurrentUser(_user: User | LoggedInUser | Admin) {
         this.currentUser = _user;
         console.log(_user);
@@ -74,7 +75,7 @@ class CarSharing {
 
     }
 
-    addCar(_car:Car): void {
+    addCar(_car: Car): void {
 
         console.log("adding Car" + _car);
         addData(_car);
@@ -89,6 +90,8 @@ class CarSharing {
 
 
     }
+
+
 
     async updateCarList(): Promise<void> {
 
@@ -186,31 +189,31 @@ class CarSharing {
 
 
     }
-    getCarWithDriveType(){
+    getCarWithDriveType() {
         console.log("HEy i get called");
 
     }
 
-    async getAvailableCar(_date:Date):Promise<Car[]>{
+    async getAvailableCar(_date: Date): Promise<Car[]> {
 
-        if(!this.car) await this.updateCarList();
+        if (!this.car) await this.updateCarList();
 
-        let availableCar:Car[] = new Array();
-        
-        for(let i:number = 0; i< this.car.length; i++){
-            for(let e:number = 0; e<this.car[i].planedDrive.length; e++){
+        let availableCar: Car[] = new Array();
 
-                if(_date >= this.car[i].planedDrive[e].begin && _date <= this.car[i].planedDrive[e].end) break;
+        for (let i: number = 0; i < this.car.length; i++) {
+            for (let e: number = 0; e < this.car[i].planedDrive.length; e++) {
+
+                if (_date >= this.car[i].planedDrive[e].begin && _date <= this.car[i].planedDrive[e].end) break;
                 else availableCar[i] = this.car[i];
 
             }
-           
+
         }
         return availableCar;
 
     }
 
-  
+
 
     async searchCar(_car: string): Promise<Car[]> {
 
@@ -272,12 +275,14 @@ class Car {
     maxUseTime: number;
     flateRate: number;
     pricePerMinute: number;
-
-    planedDrive: IDriveData[];
     image: string;
 
-    //TODO add image string   
-    constructor(_modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number, _image: string) {
+    planedDrive: IDriveData[];
+
+
+
+    constructor(_uuid: string, _modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number, _image: string) {
+        this.uuid = _uuid;
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
         this.earliestUsableTime = _earliestUsableTime;
@@ -288,32 +293,38 @@ class Car {
         this.image = _image;
 
     }
-    constructorWithUUID(_uuid: string, _modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number) {
-        this.modelDescription = _modelDescription;
-        this.driveType = _driveType;
-        this.earliestUsableTime = _earliestUsableTime;
-        this.latestUsageTime = _latestUsageTime;
-        this.maxUseTime = _maxUseTime;
-        this.flateRate = _flateRate;
-        this.pricePerMinute = _pricePerMinute;
 
-        // this.image = _image;
-
+    async updateCar() {
+        console.log("updating a car");
+        await updateCarDB(this);
+        await CarSharing.getCarSharingIni().updateCarList();
     }
 
 
-    addDrive(_drive: IDriveData): void {
-        if (this.planedDrive) {
-            let newDrivingData: IDriveData[] = new Array(this.planedDrive.length);
-            for (let i: number = 0; i < newDrivingData.length; i++) {
-                if (i < newDrivingData.length) newDrivingData[i] = this.planedDrive[i];
-                else newDrivingData[i] = _drive;
 
-            }
-        } else this.planedDrive = new Array(_drive);
-        console.log(this.planedDrive);
-        CarSharing.getCarSharingIni().updateCarList();
-    }
+    // async addDrive(_drive: IDriveData): Promise<void> {
+       
+    //     if (!this.planedDrive) {
+          
+    //         this.planedDrive = new Array(_drive);
+    //     }
+     
+    //     let newDrivingData: IDriveData[] = new Array(this.planedDrive.length+1);
+    //     for (let i: number = 0; i < newDrivingData.length; i++) {
+    //         console.log(i)
+    //         if (i < newDrivingData.length){
+               
+    //             newDrivingData[i] = this.planedDrive[i];
+    //         } 
+    //         else newDrivingData[i] = _drive;
+
+    //     }
+    //     console.log("----------__-----")
+    //     console.log(newDrivingData);
+    //     this.planedDrive = newDrivingData;
+    //     updateCarDB(this);
+    //    // 
+    // }
 
 
     isFreeAt(_time: IDriveData): boolean {
@@ -336,7 +347,7 @@ class Car {
 
     }
 
-    
+
 
     checkDuration(_time: IDriveData): boolean {
         let durationInMillis: number = _time.end.getTime() - _time.begin.getTime();
@@ -362,6 +373,12 @@ interface IDriveData {
     end: Date;
 }
 
+interface IBooking{
+    driveData:IDriveData;
+    user:LoggedInUser | Admin;
+    car:Car;
+}
+
 
 class Drive {
     dateOfBooking: IDriveData;
@@ -369,32 +386,24 @@ class Drive {
     // car: Car;
 }
 
+interface ICarDAO {
 
-
-class DrivingData {
-    planedDrive: IDriveData[];
-    pastDrive: IDriveData[];
-
-    constructor() {
-
-    }
-    addDrive() {
-
-    }
-    isFreeAt(_time: IDriveData) {
-
-        for (let i: number; i < this.planedDrive.length; i++) {
-            //If given Time is inbetween an already exisiting Time return = false 
-            if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime()) return false;
-            else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime()) return false;
-            //Timeslot is available return = true
-            else return true;
-        }
-
-    }
+    _id: string;
+    modelDescription: string;
+    driveType: DriveType;
+    earliestUsableTime: number;
+    latestUsageTime: number;
+    maxUseTime: number;
+    flateRate: number;
+    pricePerMinute: number;
+    image: string;
 
 
 }
+
+
+
+
 
 
 
@@ -428,7 +437,7 @@ class User {
             console.log("Login succsesful ! ")
         } else console.log("User allready exists");
 
-        //
+
     }
 
 
@@ -439,7 +448,7 @@ class User {
 class LoggedInUser extends User {
     userName: string;
     password: string;
-    drivingData: DrivingData;
+    drivingData: IDriveData;
 
     constructor(_userName: string, _password: string) {
         super();

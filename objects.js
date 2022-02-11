@@ -171,10 +171,10 @@ class Car {
     maxUseTime;
     flateRate;
     pricePerMinute;
-    planedDrive;
     image;
-    //TODO add image string   
-    constructor(_modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute, _image) {
+    planedDrive;
+    constructor(_uuid, _modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute, _image) {
+        this.uuid = _uuid;
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
         this.earliestUsableTime = _earliestUsableTime;
@@ -184,31 +184,29 @@ class Car {
         this.pricePerMinute = _pricePerMinute;
         this.image = _image;
     }
-    constructorWithUUID(_uuid, _modelDescription, _driveType, _earliestUsableTime, _latestUsageTime, _maxUseTime, _flateRate, _pricePerMinute) {
-        this.modelDescription = _modelDescription;
-        this.driveType = _driveType;
-        this.earliestUsableTime = _earliestUsableTime;
-        this.latestUsageTime = _latestUsageTime;
-        this.maxUseTime = _maxUseTime;
-        this.flateRate = _flateRate;
-        this.pricePerMinute = _pricePerMinute;
-        // this.image = _image;
+    async updateCar() {
+        console.log("updating a car");
+        await updateCarDB(this);
+        await CarSharing.getCarSharingIni().updateCarList();
     }
-    addDrive(_drive) {
-        if (this.planedDrive) {
-            let newDrivingData = new Array(this.planedDrive.length);
-            for (let i = 0; i < newDrivingData.length; i++) {
-                if (i < newDrivingData.length)
-                    newDrivingData[i] = this.planedDrive[i];
-                else
-                    newDrivingData[i] = _drive;
-            }
-        }
-        else
-            this.planedDrive = new Array(_drive);
-        console.log(this.planedDrive);
-        CarSharing.getCarSharingIni().updateCarList();
-    }
+    // async addDrive(_drive: IDriveData): Promise<void> {
+    //     if (!this.planedDrive) {
+    //         this.planedDrive = new Array(_drive);
+    //     }
+    //     let newDrivingData: IDriveData[] = new Array(this.planedDrive.length+1);
+    //     for (let i: number = 0; i < newDrivingData.length; i++) {
+    //         console.log(i)
+    //         if (i < newDrivingData.length){
+    //             newDrivingData[i] = this.planedDrive[i];
+    //         } 
+    //         else newDrivingData[i] = _drive;
+    //     }
+    //     console.log("----------__-----")
+    //     console.log(newDrivingData);
+    //     this.planedDrive = newDrivingData;
+    //     updateCarDB(this);
+    //    // 
+    // }
     isFreeAt(_time) {
         if (this.planedDrive) {
             for (let i = 0; i < this.planedDrive.length; i++) {
@@ -240,26 +238,6 @@ class Drive {
     dateOfBooking;
     duration;
 }
-class DrivingData {
-    planedDrive;
-    pastDrive;
-    constructor() {
-    }
-    addDrive() {
-    }
-    isFreeAt(_time) {
-        for (let i; i < this.planedDrive.length; i++) {
-            //If given Time is inbetween an already exisiting Time return = false 
-            if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime())
-                return false;
-            else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime())
-                return false;
-            //Timeslot is available return = true
-            else
-                return true;
-        }
-    }
-}
 class User {
     role;
     constructor() {
@@ -282,7 +260,6 @@ class User {
         }
         else
             console.log("User allready exists");
-        //
     }
 }
 class LoggedInUser extends User {

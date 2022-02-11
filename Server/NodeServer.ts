@@ -1,6 +1,7 @@
 import * as Http from "http";
 import * as Url from "url";
 import * as Mongo from "mongodb";
+import { ObjectID } from "bson";
 
 
 
@@ -80,6 +81,25 @@ async function handleRequest(_request: Http.IncomingMessage, _response: Http.Ser
         _response.write(JSON.stringify(await (mongoCollection.find().toArray())));
         _response.end();
 
+
+
+    }else if(refUrl.pathname == "/updateOne"){
+
+        console.log("updating....");
+        let id:string = refUrl.searchParams.get("uuid");
+        var objectId:ObjectID = new ObjectID(id); 
+        await connectRoDatabase(dataBaseUrl, "Car");
+        mongoCollection.updateOne({"_id":objectId},{$set: url.query});
+
+     
+        
+           
+
+    }else if(refUrl.pathname == "/saveBooking"){
+
+        await connectRoDatabase(dataBaseUrl, "Bookings");
+        mongoCollection.insertOne(url.query);
+        _response.end();
 
 
     }

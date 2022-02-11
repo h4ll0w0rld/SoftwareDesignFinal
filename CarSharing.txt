@@ -56,7 +56,7 @@ Zudem ist es dem Administrator vorbehalten neue Autos in der CarSharing Plattfor
 Ein Auto besteht aus folgenden Felder, einer eindeutigen ID, einer Bezeichnung, der Antriebsart (elektrisch oder konventionell), einer frühesten Nutzungsuhrzeit, einer spätesten Nutzungsuhrzeit, einer maximalen Nutzungsdauer, 
 einem pauschalen Nutzungspreis in EUR und einem Preis pro Minute in EUR.
 Beispiel:
-  ID: TELMOD3-1
+  0ID: TELMOD3-1
   Bezeichnung: Tesla Model 3 - weiß
   Antriebsart: elektrisch oder auch möglich Elektrisch: (Ja/Nein)
   f. NUZ: 06:00

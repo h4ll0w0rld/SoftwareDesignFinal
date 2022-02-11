@@ -23,13 +23,17 @@
             <input type="date">
             <label for="time">Zeit: </label>
             <input type="time">
+            <label for="duration">Dauer (min): </label>
+            <input type="number" min="0" name="" id="">
             <label for="driveType">Elektrisch</label>
             <select name="driveType" id="drive_type" onchange="CarSharing.getCarSharingIni().getCarWithDriveType()">
                 <option value="Electric">Elektro</option>
-                <option value="Electric">Verbrenner</option>
+                <option value="Conventional">Verbrenner</option>
             </select>
             <button onclick="showCar(CarSharing.getCarSharingIni().getCar())">Show Cars</button>
         </div>
+
+        <button onclick="testCar()">test</button>
 
         <div id="CarOverview">
             <label for="searchInput">Suche</label>
