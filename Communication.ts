@@ -33,11 +33,26 @@ async function updateCarDB(_car:Car){
 
 }
 
-async function saveBooking(_booking:IBooking) {
+async function saveBooking(_booking:IDriveData) {
     let query: URLSearchParams = new URLSearchParams(<any>_booking)
     let url = refUrl +"/saveBooking"+"?"+query;
 
     await fetch(url, {method:"get"});
+    
+}
+
+
+async function getBooking(): Promise<IDriveData[]> {
+
+    let url = refUrl + "/getBooking";
+
+    let response: string = await (await fetch(url, { method: "get" })).text();
+    let bookings:IDriveData[] =  JSON.parse(response);
+
+   // console.log(bookings[0].begin)
+
+    return bookings;
+
     
 }
 

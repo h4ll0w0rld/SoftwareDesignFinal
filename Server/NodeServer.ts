@@ -18,10 +18,11 @@ console.log("Running on Port: " + port);
 
 startServer(port);
 
-function startServer(_port: number): void {
+async function startServer(_port: number):Promise< void> {
     let server: Http.Server = Http.createServer();
     server.addListener("request", handleRequest);
     server.listen(port);
+    
 
 
 }
@@ -99,6 +100,13 @@ async function handleRequest(_request: Http.IncomingMessage, _response: Http.Ser
 
         await connectRoDatabase(dataBaseUrl, "Bookings");
         mongoCollection.insertOne(url.query);
+        _response.end();
+
+
+    }else if(refUrl.pathname == "/getBooking"){
+
+        await connectRoDatabase(dataBaseUrl, "Bookings");
+        _response.write(JSON.stringify(await (mongoCollection.find().toArray())));
         _response.end();
 
 

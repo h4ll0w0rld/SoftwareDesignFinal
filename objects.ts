@@ -270,8 +270,8 @@ class Car {
     uuid: string;
     modelDescription: string;
     driveType: DriveType;
-    earliestUsableTime: number;
-    latestUsageTime: number;
+    earliestUsableTime: string;
+    latestUsageTime: string;
     maxUseTime: number;
     flateRate: number;
     pricePerMinute: number;
@@ -281,7 +281,7 @@ class Car {
 
 
 
-    constructor(_uuid: string, _modelDescription: string, _driveType: DriveType, _earliestUsableTime: number, _latestUsageTime: number, _maxUseTime: number, _flateRate: number, _pricePerMinute: number, _image: string) {
+    constructor(_uuid: string, _modelDescription: string, _driveType: DriveType, _earliestUsableTime: string, _latestUsageTime: string, _maxUseTime: number, _flateRate: number, _pricePerMinute: number, _image: string) {
         this.uuid = _uuid;
         this.modelDescription = _modelDescription;
         this.driveType = _driveType;
@@ -294,55 +294,60 @@ class Car {
 
     }
 
-    async updateCar() {
-        console.log("updating a car");
-        await updateCarDB(this);
-        await CarSharing.getCarSharingIni().updateCarList();
+
+
+
+
+
+    async getBookings(): Promise<IDriveData[]> {
+
+        if (!this.planedDrive) {
+
+            this.planedDrive = await getBooking();
+        }
+
+        let bookings: IDriveData[] = new Array(this.planedDrive.length);
+        let e: number = 0;
+        for (let i: number = 0; i < bookings.length; i++) {
+
+            if (this.uuid == this.planedDrive[i].car) {
+                bookings[e] = this.planedDrive[i];
+                e++;
+            }
+
+        }
+        let finalBookings: IDriveData[] = new Array()
+        for (let a: number = 0; a < e; a++) {
+            finalBookings[a] = bookings[a];
+        }
+
+
+        return finalBookings;
     }
 
 
+    async isFreeAt(_time: IDriveData): Promise <boolean>{
 
-    // async addDrive(_drive: IDriveData): Promise<void> {
+        let bookings: IDriveData[] = await this.getBookings()
+        console.log("***********************")
+        console.log("is to long: "+ this.checkUseTime(_time))
        
-    //     if (!this.planedDrive) {
-          
-    //         this.planedDrive = new Array(_drive);
-    //     }
-     
-    //     let newDrivingData: IDriveData[] = new Array(this.planedDrive.length+1);
-    //     for (let i: number = 0; i < newDrivingData.length; i++) {
-    //         console.log(i)
-    //         if (i < newDrivingData.length){
-               
-    //             newDrivingData[i] = this.planedDrive[i];
-    //         } 
-    //         else newDrivingData[i] = _drive;
+       
+       // console.log(bookings);
+        for (let i: number = 0; i < bookings.length; i++) {
+            let beginDate:Date = new Date(bookings[i].begin);
+            let endDate:Date = new Date(bookings[i].end);
 
-    //     }
-    //     console.log("----------__-----")
-    //     console.log(newDrivingData);
-    //     this.planedDrive = newDrivingData;
-    //     updateCarDB(this);
-    //    // 
-    // }
+           // let currentBooking:IDriveData =  {begin: bookings[i].begin, end:bookings[i].end, username:bookings[i].username, car:bookings[i].car} as IDriveData;            //If given Time is inbetween or arround an already exisiting Time: return = false 
+            if (_time.begin.getTime() >= beginDate.getTime() && _time.begin.getTime() <= endDate.getTime()) return false;
 
 
-    isFreeAt(_time: IDriveData): boolean {
-
-        if (this.planedDrive) {
-
-            for (let i: number = 0; i < this.planedDrive.length; i++) {
-
-                //If given Time is inbetween or arround an already exisiting Time return = false 
-                if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime()) return false;
+            else if (_time.end.getTime() >= beginDate.getTime() && _time.end.getTime() <= endDate.getTime()) return false;
 
 
-                else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime()) return false;
-
-
-                else if (_time.begin <= this.planedDrive[i].begin && _time.end >= this.planedDrive[i].end) return false;
-            }
+            else if (_time.begin <= beginDate && _time.end >= endDate) return false;
         }
+
         return true;
 
     }
@@ -350,6 +355,7 @@ class Car {
 
 
     checkDuration(_time: IDriveData): boolean {
+
         let durationInMillis: number = _time.end.getTime() - _time.begin.getTime();
         let durationInMin: number = (durationInMillis / 1000) / 60;
 
@@ -357,8 +363,20 @@ class Car {
         return true;
 
     }
-    checkUseTime(_time: IDriveData) {
-        if (_time.begin.getTime() <= this.latestUsageTime && this.latestUsageTime >= this.earliestUsableTime) return true;
+    checkUseTime(_time: IDriveData):boolean {
+       
+        let begin:number = (_time.begin.getHours()*60)+_time.begin.getMinutes();
+        let end:number = (_time.end.getHours()*60)+_time.end.getMinutes();
+    
+        let earliestPosib:string[] = this.earliestUsableTime.split(":",2);
+        let latestPosib:string[] = this.latestUsageTime.split(":",2);
+        
+    
+        let earlyNumb:number = parseInt(earliestPosib[0])*60 + parseInt(earliestPosib[1]) ;
+        let lateNumb:number = parseFloat(latestPosib[0])*60 + parseFloat(latestPosib[1]);
+   
+        if (begin <= lateNumb && end >= earlyNumb) return true;
+
         return false;
 
     }
@@ -371,12 +389,14 @@ class Car {
 interface IDriveData {
     begin: Date;
     end: Date;
+    username: string;
+    car: string;
+
 }
 
-interface IBooking{
-    driveData:IDriveData;
-    user:LoggedInUser | Admin;
-    car:Car;
+interface IBooking {
+    driveData: IDriveData;
+
 }
 
 
@@ -391,8 +411,8 @@ interface ICarDAO {
     _id: string;
     modelDescription: string;
     driveType: DriveType;
-    earliestUsableTime: number;
-    latestUsageTime: number;
+    earliestUsableTime: string;
+    latestUsageTime: string;
     maxUseTime: number;
     flateRate: number;
     pricePerMinute: number;
@@ -457,25 +477,10 @@ class LoggedInUser extends User {
         this.password = _password;
     }
 
-
-    checkLoginData() {
-
-    }
-
-
     bookCar() {
 
 
     }
-    showPastDrive() {
-
-    }
-
-    showPlanedDrives() {
-
-
-    }
-
 
 }
 

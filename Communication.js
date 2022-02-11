@@ -23,6 +23,13 @@ async function saveBooking(_booking) {
     let url = refUrl + "/saveBooking" + "?" + query;
     await fetch(url, { method: "get" });
 }
+async function getBooking() {
+    let url = refUrl + "/getBooking";
+    let response = await (await fetch(url, { method: "get" })).text();
+    let bookings = JSON.parse(response);
+    // console.log(bookings[0].begin)
+    return bookings;
+}
 async function getData(_dataType) {
     let url = refUrl;
     if (_dataType == "User")

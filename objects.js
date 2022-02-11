@@ -184,40 +184,39 @@ class Car {
         this.pricePerMinute = _pricePerMinute;
         this.image = _image;
     }
-    async updateCar() {
-        console.log("updating a car");
-        await updateCarDB(this);
-        await CarSharing.getCarSharingIni().updateCarList();
-    }
-    // async addDrive(_drive: IDriveData): Promise<void> {
-    //     if (!this.planedDrive) {
-    //         this.planedDrive = new Array(_drive);
-    //     }
-    //     let newDrivingData: IDriveData[] = new Array(this.planedDrive.length+1);
-    //     for (let i: number = 0; i < newDrivingData.length; i++) {
-    //         console.log(i)
-    //         if (i < newDrivingData.length){
-    //             newDrivingData[i] = this.planedDrive[i];
-    //         } 
-    //         else newDrivingData[i] = _drive;
-    //     }
-    //     console.log("----------__-----")
-    //     console.log(newDrivingData);
-    //     this.planedDrive = newDrivingData;
-    //     updateCarDB(this);
-    //    // 
-    // }
-    isFreeAt(_time) {
-        if (this.planedDrive) {
-            for (let i = 0; i < this.planedDrive.length; i++) {
-                //If given Time is inbetween or arround an already exisiting Time return = false 
-                if (_time.begin.getTime() >= this.planedDrive[i].begin.getTime() && _time.begin.getTime() <= this.planedDrive[i].end.getTime())
-                    return false;
-                else if (_time.end.getTime() >= this.planedDrive[i].begin.getTime() && _time.end.getTime() <= this.planedDrive[i].end.getTime())
-                    return false;
-                else if (_time.begin <= this.planedDrive[i].begin && _time.end >= this.planedDrive[i].end)
-                    return false;
+    async getBookings() {
+        if (!this.planedDrive) {
+            this.planedDrive = await getBooking();
+        }
+        let bookings = new Array(this.planedDrive.length);
+        let e = 0;
+        for (let i = 0; i < bookings.length; i++) {
+            if (this.uuid == this.planedDrive[i].car) {
+                bookings[e] = this.planedDrive[i];
+                e++;
             }
+        }
+        let finalBookings = new Array();
+        for (let a = 0; a < e; a++) {
+            finalBookings[a] = bookings[a];
+        }
+        return finalBookings;
+    }
+    async isFreeAt(_time) {
+        let bookings = await this.getBookings();
+        console.log("***********************");
+        console.log("is to long: " + this.checkUseTime(_time));
+        // console.log(bookings);
+        for (let i = 0; i < bookings.length; i++) {
+            let beginDate = new Date(bookings[i].begin);
+            let endDate = new Date(bookings[i].end);
+            // let currentBooking:IDriveData =  {begin: bookings[i].begin, end:bookings[i].end, username:bookings[i].username, car:bookings[i].car} as IDriveData;            //If given Time is inbetween or arround an already exisiting Time: return = false 
+            if (_time.begin.getTime() >= beginDate.getTime() && _time.begin.getTime() <= endDate.getTime())
+                return false;
+            else if (_time.end.getTime() >= beginDate.getTime() && _time.end.getTime() <= endDate.getTime())
+                return false;
+            else if (_time.begin <= beginDate && _time.end >= endDate)
+                return false;
         }
         return true;
     }
@@ -229,7 +228,13 @@ class Car {
         return true;
     }
     checkUseTime(_time) {
-        if (_time.begin.getTime() <= this.latestUsageTime && this.latestUsageTime >= this.earliestUsableTime)
+        let begin = (_time.begin.getHours() * 60) + _time.begin.getMinutes();
+        let end = (_time.end.getHours() * 60) + _time.end.getMinutes();
+        let earliestPosib = this.earliestUsableTime.split(":", 2);
+        let latestPosib = this.latestUsageTime.split(":", 2);
+        let earlyNumb = parseInt(earliestPosib[0]) * 60 + parseInt(earliestPosib[1]);
+        let lateNumb = parseFloat(latestPosib[0]) * 60 + parseFloat(latestPosib[1]);
+        if (begin <= lateNumb && end >= earlyNumb)
             return true;
         return false;
     }
@@ -272,13 +277,7 @@ class LoggedInUser extends User {
         this.userName = _userName;
         this.password = _password;
     }
-    checkLoginData() {
-    }
     bookCar() {
-    }
-    showPastDrive() {
-    }
-    showPlanedDrives() {
     }
 }
 class Admin extends LoggedInUser {

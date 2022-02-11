@@ -8,7 +8,11 @@ let carSharingApp = CarSharing.getCarSharingIni();
 //console.log(carSharingApp.getCurrentUSer())
 let currentUser = CarSharing.getCarSharingIni().getCurrentUser();
 async function testCar() {
-    console.log(await CarSharing.getCarSharingIni().getCar());
+    let input = document.getElementById("tester_input");
+    console.log(input.value);
+    let testDate = new Date("T09:22");
+    console.log(testDate);
+    //console.log(await CarSharing.getCarSharingIni().getCar())
 }
 carSharingApp.startApp();
 let user = new LoggedInUser("nilssss", "wildeTests");
@@ -149,10 +153,12 @@ function showAddCarForm() {
     let earliestUsableTimeLabel = document.createElement("label");
     let earliestUsableTimeInput = document.createElement("input");
     earliestUsableTimeInput.setAttribute("name", "earliestUsableTime");
+    earliestUsableTimeInput.setAttribute("type", "time");
     earliestUsableTimeLabel.innerHTML = "Frühestenutzzeit: ";
     let latestUsageTimeLabel = document.createElement("label");
     let latestUsageTimeInput = document.createElement("input");
     latestUsageTimeInput.setAttribute("name", "latestUsageTime");
+    latestUsageTimeInput.setAttribute("type", "time");
     latestUsageTimeLabel.innerHTML = "Spätestenutzzeit:";
     let maxUseTimeLabel = document.createElement("label");
     let maxUseTimeInput = document.createElement("input");
@@ -173,13 +179,13 @@ function showAddCarForm() {
     let submittBttn = document.createElement("button");
     submittBttn.innerHTML = "Bestätigen";
     submittBttn.setAttribute("type", "button");
-    //--------------------Event------------------------------------
+    //--------------------Handel check auto available ------------------------------------
     submittBttn.addEventListener("click", async function () {
         let formData = new FormData(carForm);
         let driveType = DriveType.ELECTRIC;
         if (formData.get("driveType") === "Conv")
             driveType = DriveType.CONVENTIONAL;
-        let newCar = new Car("", formData.get("model"), driveType, parseFloat(formData.get("earliestUsableTime")), parseFloat(formData.get("latestUsageTime")), parseFloat(formData.get("maxUseTime")), parseFloat(formData.get("flatRate")), parseFloat(formData.get("pricePerMinute")), formData.get("imageLink"));
+        let newCar = new Car("", formData.get("model"), driveType, earliestUsableTimeInput.value, latestUsageTimeInput.value, parseFloat(formData.get("maxUseTime")), parseFloat(formData.get("flatRate")), parseFloat(formData.get("pricePerMinute")), formData.get("imageLink"));
         CarSharing.getCarSharingIni().addCar(newCar);
     });
     document.body.append(div);
@@ -208,7 +214,8 @@ function showBokkingForm(_carDiv, _car) {
     sumbittBttn.addEventListener("click", function () {
         if (inputDate.value && timeInput.value && durationInput.value) {
             let dateBeginn = new Date(inputDate.value + "T" + timeInput.value);
-            let inputTime = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(durationInput.value)) };
+            let user = CarSharing.getCarSharingIni().getCurrentUser();
+            let inputTime = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(durationInput.value)), username: user.userName, car: _car.uuid };
             showSearchResults(_car, inputTime);
         }
         else
@@ -218,27 +225,27 @@ function showBokkingForm(_carDiv, _car) {
     return false;
 }
 async function showSearchResults(_car, _time) {
-    console.log("hihihihhiööö");
     let car = new Car(_car.uuid, _car.modelDescription, _car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime, _car.flateRate, _car.pricePerMinute, _car.image);
-    if (!car.isFreeAt(_time)) {
+    if (!await car.isFreeAt(_time)) {
         console.log("Das Auto ist in diesem Zeitraum schon gebucht.");
         return;
     }
-    console.log;
-    if (!car.checkDuration(_time)) {
+    else if (!car.checkDuration(_time)) {
         console.log("Das Auto kann nicht solange gebucht werden");
         return;
     }
-    if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.LOGGEDINUSER || CarSharing.getCarSharingIni().getCurrentUser().role == Role.ADMIN) {
-        console.log(_car.planedDrive);
+    else if (!car.checkUseTime(_time)) {
+        console.log("Das Auto kann in diesem Zeitraum nicht gebucht werden! ");
+        return;
+    }
+    else if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.LOGGEDINUSER || CarSharing.getCarSharingIni().getCurrentUser().role == Role.ADMIN) {
         let bookingBttn = document.createElement("button");
         let form = document.getElementById("booking_form");
         bookingBttn.innerHTML = "Jetzt Buchen";
         bookingBttn.setAttribute("type", "button");
-        bookingBttn.addEventListener("click", function () {
-            console.log(car);
-            let bookinData = { driveData: _time, user: CarSharing.getCarSharingIni().getCurrentUser(), car: _car };
-            saveBooking(bookinData);
+        bookingBttn.addEventListener("click", async function () {
+            saveBooking(_time);
+            console.log("Car has been booked");
             while (form.firstChild)
                 form.removeChild(form.firstChild);
         });

@@ -1,5 +1,6 @@
 
 
+
 let user1: User = new User();
 let user2: LoggedInUser = new LoggedInUser("DerTester", "sicher:(");
 let admin: Admin = new Admin("admin", "admin");
@@ -15,8 +16,11 @@ let currentUser: any = CarSharing.getCarSharingIni().getCurrentUser();
 
 async function testCar(){
     
-        
-    console.log(await CarSharing.getCarSharingIni().getCar())
+     let input:HTMLInputElement = <HTMLInputElement> document.getElementById("tester_input");
+     console.log(input.value);   
+     let testDate:Date = new Date("T09:22");
+     console.log(testDate);
+    //console.log(await CarSharing.getCarSharingIni().getCar())
 
 }
 
@@ -226,11 +230,13 @@ function showAddCarForm() {
     let earliestUsableTimeLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     let earliestUsableTimeInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
     earliestUsableTimeInput.setAttribute("name", "earliestUsableTime");
+    earliestUsableTimeInput.setAttribute("type", "time");
     earliestUsableTimeLabel.innerHTML = "Frühestenutzzeit: ";
 
     let latestUsageTimeLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
     let latestUsageTimeInput: HTMLInputElement = <HTMLInputElement>document.createElement("input");
     latestUsageTimeInput.setAttribute("name", "latestUsageTime");
+    latestUsageTimeInput.setAttribute("type", "time");
     latestUsageTimeLabel.innerHTML = "Spätestenutzzeit:";
 
     let maxUseTimeLabel: HTMLLabelElement = <HTMLLabelElement>document.createElement("label");
@@ -258,7 +264,7 @@ function showAddCarForm() {
     submittBttn.innerHTML = "Bestätigen";
     submittBttn.setAttribute("type", "button");
 
-    //--------------------Event------------------------------------
+    //--------------------Handel check auto available ------------------------------------
 
     submittBttn.addEventListener("click", async function () {
 
@@ -267,8 +273,7 @@ function showAddCarForm() {
         let driveType: DriveType = DriveType.ELECTRIC;
         if (formData.get("driveType") === "Conv") driveType = DriveType.CONVENTIONAL;
 
-
-        let newCar: Car = new Car("",<string>formData.get("model"), driveType, parseFloat(<string>formData.get("earliestUsableTime")), parseFloat(<string>formData.get("latestUsageTime")), parseFloat(<string>formData.get("maxUseTime")), parseFloat(<string>formData.get("flatRate")), parseFloat(<string>formData.get("pricePerMinute")), <string>formData.get("imageLink"));
+        let newCar: Car = new Car("",<string>formData.get("model"), driveType, earliestUsableTimeInput.value, latestUsageTimeInput.value, parseFloat(<string>formData.get("maxUseTime")), parseFloat(<string>formData.get("flatRate")), parseFloat(<string>formData.get("pricePerMinute")), <string>formData.get("imageLink"));
 
         CarSharing.getCarSharingIni().addCar(newCar);
     })
@@ -317,7 +322,9 @@ function showBokkingForm(_carDiv: HTMLDivElement, _car: Car) {
         if (inputDate.value && timeInput.value && durationInput.value) {
 
             let dateBeginn = new Date(inputDate.value + "T" + timeInput.value);
-            let inputTime: IDriveData = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(durationInput.value)) } as IDriveData;
+           
+            let user:LoggedInUser| Admin = <LoggedInUser| Admin> CarSharing.getCarSharingIni().getCurrentUser(); 
+            let inputTime: IDriveData = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(durationInput.value)), username:user.userName, car: _car.uuid  } as IDriveData;
            
             showSearchResults(_car, inputTime);
 
@@ -332,32 +339,34 @@ function showBokkingForm(_carDiv: HTMLDivElement, _car: Car) {
 
 
 async function showSearchResults(_car: Car, _time: IDriveData) {
-
-    console.log("hihihihhiööö")
+   
     let car: Car = new Car(_car.uuid,_car.modelDescription, _car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime, _car.flateRate, _car.pricePerMinute, _car.image);
-    if (!car.isFreeAt(_time)) {
+    
+    if (!await car.isFreeAt(_time)) {
         console.log("Das Auto ist in diesem Zeitraum schon gebucht.");
         return;
-    } console.log
-    if (!car.checkDuration(_time)) {
+    } 
+    else if (!car.checkDuration(_time)) {
         console.log("Das Auto kann nicht solange gebucht werden");
         return;
     }
-    if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.LOGGEDINUSER || CarSharing.getCarSharingIni().getCurrentUser().role == Role.ADMIN) {
+    else if(!car.checkUseTime(_time)){
+        console.log("Das Auto kann in diesem Zeitraum nicht gebucht werden! ");
+        return;
+    }
+    else if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.LOGGEDINUSER || CarSharing.getCarSharingIni().getCurrentUser().role == Role.ADMIN) {
 
-        console.log(_car.planedDrive);
+     
         let bookingBttn: HTMLButtonElement = <HTMLButtonElement>document.createElement("button");
 
         let form: HTMLFormElement = <HTMLFormElement>document.getElementById("booking_form");
         bookingBttn.innerHTML = "Jetzt Buchen";
         bookingBttn.setAttribute("type", "button");
 
-        bookingBttn.addEventListener("click", function () {
-            console.log(car)
-            let bookinData:IBooking = {driveData:_time , user: <LoggedInUser | Admin>CarSharing.getCarSharingIni().getCurrentUser(), car:_car}
-            saveBooking(bookinData);
-
+        bookingBttn.addEventListener("click", async function () {
           
+            saveBooking(_time);
+            console.log("Car has been booked");
            
             while (form.firstChild) form.removeChild(form.firstChild);
 
