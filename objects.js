@@ -17,6 +17,15 @@ class CarSharing {
             this.car = await getData("car");
         return this.car;
     }
+    async getCarByID(_id) {
+        if (!this.car)
+            this.car = await getData("car");
+        for (let i = 0; i < this.booking.length; i++) {
+            if (_id == this.car[i].uuid)
+                return this.car[i];
+        }
+        return null;
+    }
     async getBooking() {
         if (!this.booking)
             this.booking = await getBookingDB();
@@ -62,27 +71,21 @@ class CarSharing {
         console.log("HEy i get called");
     }
     async getAvailableCar(_date, _driveType) {
-        if (!this.car) {
+        if (!this.car)
             await this.updateCarList();
-        }
-        let availableCar = new Array();
+        let availableCar = new Array(this.car.length);
+        let a = 0;
         for (let i = 0; i < this.car.length; i++) {
-            console.log("IIIIIIIIIII");
-            let planedDrive = await this.car[i].getBookings();
-            for (let e = 0; e < planedDrive.length; e++) {
-                if (!await this.car[i].isFreeAt(_date)) {
-                    console.log("IST SCHON GEBUCHT");
-                    break;
-                }
-                else if (this.car[i].driveType != _driveType.valueOf()) {
-                    console.log("IST DER FALSCHE DRIVETYPE");
-                    break;
-                }
-                else
-                    availableCar[i] = this.car[i];
+            if (await this.car[i].isFreeAt(_date) && this.car[i].driveType == _driveType.valueOf()) {
+                availableCar[a] = this.car[i];
+                a++;
             }
         }
-        return availableCar;
+        let finalCar = new Array(a);
+        for (let i = 0; i < a; i++)
+            finalCar[i] = availableCar[i];
+        console.log(finalCar);
+        return finalCar;
     }
     async searchFilter(_date, _driveType) {
         let driveType = DriveType.CONVENTIONAL;
@@ -199,6 +202,13 @@ class Car {
             return true;
         return false;
     }
+    calculatePrice(_time) {
+        let durationInMillis = _time.end.getTime() - _time.begin.getTime();
+        let durationInMin = (durationInMillis / 1000) / 60;
+        let priceTime = this.pricePerMinute * durationInMin;
+        ///  let second:number = priceTime +  this.flateRate/1;
+        return priceTime + this.flateRate / 1;
+    }
 }
 class User {
     role;
@@ -244,10 +254,8 @@ class LoggedInUser extends User {
         console.log("Checking User...");
         let user = await CarSharing.getCarSharingIni().getUser();
         for (let i = 0; i < user.length; i++) {
-            if (user[i].userName === _userInput.userName && user[i].password === _userInput.password) {
-                console.log("User name und passwort stimmen");
+            if (user[i].userName === _userInput.userName && user[i].password === _userInput.password)
                 return true;
-            }
         }
         return false;
     }
@@ -274,7 +282,6 @@ class LoggedInUser extends User {
         for (let a = 0; a < e; a++) {
             finalBooking[a] = upBooking[a];
         }
-        console.log(finalBooking);
         return finalBooking;
     }
     async getRecentDrive() {
@@ -292,8 +299,29 @@ class LoggedInUser extends User {
         for (let a = 0; a < e; a++) {
             finalBooking[a] = resBooking[a];
         }
-        console.log(finalBooking);
         return finalBooking;
+    }
+    async numbOfBooking() {
+        let bookings = await CarSharing.getCarSharingIni().getBooking();
+        let count = 0;
+        for (let i = 0; i < bookings.length; i++) {
+            if (bookings[i].username == this.userName)
+                count++;
+        }
+        return count;
+    }
+    async everagePrice() {
+        let bookings = await CarSharing.getCarSharingIni().getBooking();
+        let sum = 0;
+        for (let i = 0; i < bookings.length; i++) {
+            if (bookings[i].username == this.userName) {
+                if (await CarSharing.getCarSharingIni().getCarByID(bookings[i].car)) {
+                    let car = await CarSharing.getCarSharingIni().getCarByID(bookings[i].car);
+                    sum += car.calculatePrice(bookings[i]);
+                }
+            }
+        }
+        return sum / await this.numbOfBooking();
     }
 }
 class Admin extends LoggedInUser {

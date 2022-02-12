@@ -1,42 +1,22 @@
 "use strict";
-let user1 = new User();
-let user2 = new LoggedInUser("DerTester", "sicher:(");
-let admin = new Admin("admin", "admin");
-//CarSharing.getCarSharingIni().addUser(admin);
-//let userArray: LoggedInUser[] = new Array(user1, user2);
 let carSharingApp = CarSharing.getCarSharingIni();
-//console.log(carSharingApp.getCurrentUSer())
-//let currentUser: any = CarSharing.getCarSharingIni().getCurrentUser();
-let bttn = document.getElementById("show_car_bttn");
-bttn.addEventListener("click", filterEvent);
+carSharingApp.startApp();
+loginOption();
 async function filterEvent() {
+    //showCar(await CarSharing.getCarSharingIni().getCar());
     let dateInput = document.getElementById("filter_form");
     let formData = new FormData(dateInput);
     let dateBeginn = new Date(formData.get("date_input") + "T" + formData.get("time_input"));
-    let inputTime = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(formData.get("duration"))), username: user.userName, car: null };
+    let inputTime = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(formData.get("duration"))), username: null, car: null };
     let driveType = DriveType.CONVENTIONAL;
-    //console.log("starting offf filer Event");
     if (formData.get("driveType") === "Electric") {
         driveType = DriveType.ELECTRIC;
     }
-    //console.log(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType));
     showCar(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType));
-    //console.log(await CarSharing.getCarSharingIni().getCar())
-    console.log("WWWWWWWWWWWWWWWWWWWWW");
-    console.log(await user.showUpcommingDrive());
+    // console.log(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType))
 }
-carSharingApp.startApp();
-let user = new LoggedInUser("nils1", "wildeTests");
-//addData(user);
-//let car: Car = new Car("https://imgr1.auto-motor-und-sport.de/11-2021-2022-Ford-Mustang-Shelby-GT500-Heritage-Edition-169FullWidth-daf7318a-1850564.jpg", "Ford Mustang Shelby GT500 Heritage Edition")
-//addData(car);
-//console.log(carSharingApp.getUser())
-let date = new Date("December 17, 1995 03:24:00");
-loginOption();
 function loginOption() {
     let currentUser = CarSharing.getCarSharingIni().getCurrentUser();
-    //TODO del
-    console.log(currentUser);
     if (currentUser.role == Role.ADMIN) {
         let addCarBttn = document.createElement("button");
         addCarBttn.innerHTML = "Auto Hinzufügen";
@@ -60,17 +40,16 @@ function loginOption() {
         let loginDiv = document.getElementById("login_register");
         loginDiv.append(logOutBttn);
         console.log("User logged Out");
+        let menuDiv = document.getElementById("menu");
         let upBookingsBttn = document.createElement("button");
         upBookingsBttn.innerHTML = "bevorstehende fahrten";
         upBookingsBttn.addEventListener("click", () => activeUser.showUpcommingDrive());
-        loginDiv.append(upBookingsBttn);
         let resBookingsBttn = document.createElement("button");
         resBookingsBttn.innerHTML = "vergangene fahrten";
         resBookingsBttn.addEventListener("click", () => activeUser.getRecentDrive());
-        loginDiv.append(resBookingsBttn);
+        menuDiv.append(upBookingsBttn, resBookingsBttn);
     }
 }
-//showLogin();
 async function showLogin() {
     let loginDiv = document.getElementById("login_register");
     while (loginDiv.firstChild)
@@ -247,30 +226,34 @@ function showBokkingForm(_carDiv, _car) {
     return false;
 }
 async function showSearchResults(_car, _time) {
+    let form = document.getElementById("booking_form");
+    let responseHtml = document.createElement("p");
     let car = new Car(_car.uuid, _car.modelDescription, _car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime, _car.flateRate, _car.pricePerMinute, _car.image);
-    console.log("called");
     if (!await car.isFreeAt(_time)) {
-        console.log("Das Auto ist in diesem Zeitraum schon gebucht.");
+        responseHtml.innerHTML = "Das Auto ist in diesem Zeitraum schon gebucht.";
+        form.append(responseHtml);
         return;
     }
     else if (!car.checkDuration(_time)) {
-        console.log("Das Auto kann nicht solange gebucht werden");
+        form.append(responseHtml);
+        responseHtml.innerHTML = "Das Auto kann nicht solange gebucht werden.";
         return;
     }
     else if (!car.checkUseTime(_time)) {
-        console.log("Das Auto kann in diesem Zeitraum nicht gebucht werden! ");
+        responseHtml.innerHTML = "Das Auto kann in diesem Zeitraum nicht gebucht werden! ";
+        form.append(responseHtml);
         return;
     }
     else if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.LOGGEDINUSER || CarSharing.getCarSharingIni().getCurrentUser().role == Role.ADMIN) {
         let bookingBttn = document.createElement("button");
-        let form = document.getElementById("booking_form");
         bookingBttn.innerHTML = "Jetzt Buchen";
         bookingBttn.setAttribute("type", "button");
+        responseHtml.innerHTML = "Das Auto wurde erfolgreich gebucht! Der Preis beträgt" + car.calculatePrice(_time);
+        form.append(responseHtml);
         bookingBttn.addEventListener("click", async function () {
             saveBooking(_time);
             console.log("Car has been booked");
-            while (form.firstChild)
-                form.removeChild(form.firstChild);
+            window.location.reload();
         });
         form.append(bookingBttn);
     }
@@ -279,7 +262,6 @@ async function showSearchResults(_car, _time) {
     }
 }
 function showCar(_car) {
-    console.log(_car);
     let innerDiv = document.getElementById("innerDiv");
     while (innerDiv.firstChild)
         innerDiv.removeChild(innerDiv.firstChild);

@@ -3,7 +3,7 @@
 const refUrl: string = "http://localhost:7000";
 
 async function addData(_data: User | Car): Promise<void> {
-    console.log("yeaaa")
+  
 
     let query: URLSearchParams = new URLSearchParams(<any>_data);
     let url:string = refUrl;
@@ -11,7 +11,7 @@ async function addData(_data: User | Car): Promise<void> {
     if (_data instanceof Car) url += "/saveCar";
 
     url += "?" + query;
-    console.log(url);
+  
     await fetch(url, { method: "get" },);
 
     console.log("Data has bin transmitted");
@@ -47,8 +47,7 @@ async function getBookingDB(): Promise<IDriveData[]> {
     let url = refUrl + "/getBooking";
 
     let response: string = await (await fetch(url, { method: "get" })).text();
-    console.log(response);
-    let bookings:IDriveData[] =  JSON.parse(response);
+    let bookings:IDriveData[] = JSON.parse(response);
 
     return bookings;
 

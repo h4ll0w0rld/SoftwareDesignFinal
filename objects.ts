@@ -3,7 +3,7 @@ class CarSharing {
 
     private user: LoggedInUser[];
     private car: Car[];
-    private booking:IDriveData[];
+    private booking: IDriveData[];
     currentUser: User | LoggedInUser | Admin;
 
 
@@ -15,19 +15,27 @@ class CarSharing {
 
     public async getUser(): Promise<User[]> {
 
-        if (!this.user)this.user= <LoggedInUser[]> await getData("user");
+        if (!this.user) this.user = <LoggedInUser[]>await getData("user");
         return this.user;
 
     }
 
-    public async getCar():Promise<Car[]> {
-        if(!this.car) this.car = <Car[]> await getData("car");
+    public async getCar(): Promise<Car[]> {
+        if (!this.car) this.car = <Car[]>await getData("car");
         return this.car;
     }
 
-    public async getBooking():Promise<IDriveData[]> {
-        if(!this.booking) this.booking= await getBookingDB();
-    
+    async getCarByID(_id: string): Promise<Car> {
+        if (!this.car) this.car = <Car[]>await getData("car");
+        for (let i: number = 0; i < this.booking.length; i++) {
+            if (_id == this.car[i].uuid) return this.car[i];
+        }
+        return null;
+    }
+
+    public async getBooking(): Promise<IDriveData[]> {
+        if (!this.booking) this.booking = await getBookingDB();
+
         return this.booking;
     }
 
@@ -106,44 +114,40 @@ class CarSharing {
 
 
 
-    async getAvailableCar(_date: IDriveData, _driveType:DriveType): Promise<Car[]> {
+    async getAvailableCar(_date: IDriveData, _driveType: DriveType): Promise<Car[]> {
 
-        if (!this.car){
 
-            await this.updateCarList();
-        } 
+        if (!this.car) await this.updateCarList();
 
-        let availableCar: Car[] = new Array();
-      
-       
+
+
+        let availableCar: Car[] = new Array(this.car.length);
+
+        let a: number = 0;
         for (let i: number = 0; i < this.car.length; i++) {
-            console.log("IIIIIIIIIII");
-            let planedDrive:IDriveData[] = await this.car[i].getBookings();
-            for (let e: number = 0; e < planedDrive.length; e++) {
-
-                if (!await this.car[i].isFreeAt(_date)){
-                    console.log("IST SCHON GEBUCHT")
-                    break;
-                }else if(this.car[i].driveType != _driveType.valueOf()){
-                    console.log("IST DER FALSCHE DRIVETYPE")
-                    break;
-                }else availableCar[i] = this.car[i];
-              
-
+        
+            if (await this.car[i].isFreeAt(_date) && this.car[i].driveType == _driveType.valueOf()) {
+               
+                availableCar[a] = this.car[i];
+                a++;
             }
 
+           
         }
-        return availableCar;
+        let finalCar: Car[] = new Array(a);
+        for (let i: number = 0; i < a; i++) finalCar[i] = availableCar[i];
+        console.log(finalCar);
+        return finalCar;
 
     }
 
 
-    async searchFilter(_date:IDriveData,_driveType:DriveType ){
+    async searchFilter(_date: IDriveData, _driveType: DriveType) {
         let driveType: DriveType = DriveType.CONVENTIONAL
-       
-        
+
+
         if (_driveType === DriveType.ELECTRIC) driveType = DriveType.ELECTRIC;
-           
+
         showCar(await CarSharing.getCarSharingIni().getAvailableCar(_date, driveType))
 
     }
@@ -228,7 +232,7 @@ class Car {
     async getBookings(): Promise<IDriveData[]> {
 
         if (!this.planedDrive) {
-         
+
             this.planedDrive = await CarSharing.getCarSharingIni().getBooking();
         }
 
@@ -239,7 +243,7 @@ class Car {
             if (this.uuid == this.planedDrive[i].car) {
                 bookings[e] = this.planedDrive[i];
                 e++;
-              
+
             }
 
         }
@@ -282,6 +286,7 @@ class Car {
     }
     checkUseTime(_time: IDriveData): boolean {
 
+
         let begin: number = (_time.begin.getHours() * 60) + _time.begin.getMinutes();
         let end: number = (_time.end.getHours() * 60) + _time.end.getMinutes();
 
@@ -289,14 +294,25 @@ class Car {
         let latestPosib: string[] = this.latestUsageTime.split(":", 2);
         let earlyNumb: number = parseInt(earliestPosib[0]) * 60 + parseInt(earliestPosib[1]);
         let lateNumb: number = parseFloat(latestPosib[0]) * 60 + parseFloat(latestPosib[1]);
-        
+
         if (begin <= lateNumb && end >= earlyNumb) return true;
 
         return false;
 
     }
 
-   
+    calculatePrice(_time: IDriveData): number {
+
+        let durationInMillis: number = _time.end.getTime() - _time.begin.getTime();
+        let durationInMin: number = (durationInMillis / 1000) / 60;
+
+        let priceTime: number = this.pricePerMinute * durationInMin;
+        ///  let second:number = priceTime +  this.flateRate/1;
+
+        return priceTime + this.flateRate / 1;
+    }
+
+
 
 
 
@@ -399,7 +415,7 @@ class LoggedInUser extends User {
     }
 
     async verifyUsername(): Promise<boolean> {
-       
+
         let user: LoggedInUser[] | Admin[] = <LoggedInUser[] | Admin[]>await CarSharing.getCarSharingIni().getUser();
 
         //RegEx for charackters
@@ -409,8 +425,8 @@ class LoggedInUser extends User {
 
         for (let i: number = 0; i < user.length; i++) {
 
-            if (user[i].userName === this.userName)  return false;
-    
+            if (user[i].userName === this.userName) return false;
+
         }
 
         return true;
@@ -435,13 +451,9 @@ class LoggedInUser extends User {
         let user: LoggedInUser[] | Admin[] = <LoggedInUser[] | Admin[]>await CarSharing.getCarSharingIni().getUser();
 
         for (let i: number = 0; i < user.length; i++) {
-            if (user[i].userName === _userInput.userName && user[i].password === _userInput.password) {
 
-                console.log("User name und passwort stimmen");
+            if (user[i].userName === _userInput.userName && user[i].password === _userInput.password) return true;
 
-                return true;
-
-            }
         }
 
         return false;
@@ -464,56 +476,87 @@ class LoggedInUser extends User {
 
     }
 
-    async showUpcommingDrive ():Promise<IDriveData[]>{
-    
-        let bookings:IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+    async showUpcommingDrive(): Promise<IDriveData[]> {
 
-        let upBooking:IDriveData[] = new Array(bookings.length);
+        let bookings: IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+        let upBooking: IDriveData[] = new Array(bookings.length);
 
-        let e:number = 0;
-        for(let i:number = 0; i < bookings.length; i++){
-         
-            let bookingBegin:Date = new Date(bookings[i].begin);
-            if(bookingBegin.getTime() > +new Date().getTime() && this.userName === bookings[i].username){
+        let e: number = 0;
+        for (let i: number = 0; i < bookings.length; i++) {
+
+            let bookingBegin: Date = new Date(bookings[i].begin);
+            if (bookingBegin.getTime() > +new Date().getTime() && this.userName === bookings[i].username) {
                 upBooking[e] = bookings[i];
                 e++
-                
-            } 
+
+            }
         }
-        let finalBooking:IDriveData[] = new Array(e);
-        for(let a:number = 0; a<e; a++){
+
+        let finalBooking: IDriveData[] = new Array(e);
+        for (let a: number = 0; a < e; a++) {
             finalBooking[a] = upBooking[a];
 
         }
-         console.log(finalBooking)
+
         return finalBooking;
     }
 
-    async getRecentDrive(){
-     
-        let bookings:IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+    async getRecentDrive() {
 
-        let resBooking:IDriveData[] = new Array();
+        let bookings: IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
 
-        
-        let e:number = 0;
-        for(let i:number = 0; i < bookings.length; i++){
-         
-            let bookingBegin:Date = new Date(bookings[i].begin);
-            if(bookingBegin.getTime() < +new Date().getTime() && this.userName === bookings[i].username){
+        let resBooking: IDriveData[] = new Array();
+
+
+        let e: number = 0;
+        for (let i: number = 0; i < bookings.length; i++) {
+
+            let bookingBegin: Date = new Date(bookings[i].begin);
+            if (bookingBegin.getTime() < +new Date().getTime() && this.userName === bookings[i].username) {
                 resBooking[e] = bookings[i];
                 e++
-                
-            } 
+
+            }
         }
-        let finalBooking:IDriveData[] = new Array(e);
-        for(let a:number = 0; a<e; a++){
+        let finalBooking: IDriveData[] = new Array(e);
+        for (let a: number = 0; a < e; a++) {
             finalBooking[a] = resBooking[a];
 
         }
 
-       console.log(finalBooking)
         return finalBooking;
+
+
+
+    }
+    async numbOfBooking() {
+
+        let bookings: IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+        let count: number = 0;
+
+        for (let i: number = 0; i < bookings.length; i++) {
+            if (bookings[i].username == this.userName) count++;
+
+        }
+        return count;
+    }
+
+
+    async everagePrice() {
+        let bookings: IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+
+        let sum: number = 0;
+        for (let i: number = 0; i < bookings.length; i++) {
+            if (bookings[i].username == this.userName) {
+                if (await CarSharing.getCarSharingIni().getCarByID(bookings[i].car)) {
+                    let car: Car = await CarSharing.getCarSharingIni().getCarByID(bookings[i].car);
+                    sum += car.calculatePrice(bookings[i])
+                }
+
+            }
+
+        }
+        return sum / await this.numbOfBooking();
 
 
     }

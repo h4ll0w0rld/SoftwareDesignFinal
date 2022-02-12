@@ -1,7 +1,6 @@
 "use strict";
 const refUrl = "http://localhost:7000";
 async function addData(_data) {
-    console.log("yeaaa");
     let query = new URLSearchParams(_data);
     let url = refUrl;
     if (_data instanceof User)
@@ -9,7 +8,6 @@ async function addData(_data) {
     if (_data instanceof Car)
         url += "/saveCar";
     url += "?" + query;
-    console.log(url);
     await fetch(url, { method: "get" });
     console.log("Data has bin transmitted");
 }
@@ -26,7 +24,6 @@ async function saveBooking(_booking) {
 async function getBookingDB() {
     let url = refUrl + "/getBooking";
     let response = await (await fetch(url, { method: "get" })).text();
-    console.log(response);
     let bookings = JSON.parse(response);
     return bookings;
 }
