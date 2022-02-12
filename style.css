@@ -1,54 +1,70 @@
-#menu {
-    text-align: center;
-}
-
-#login_register {
-    float: right;
-}
-
-#CarOverview {
-    margin-left: auto;
-    margin-right: auto;
-}
-
-#login_register {
-    float: right;
-}
-
-#filter {
-    padding-bottom: 10px;
-}
-
-.carDiv {
-    background-color: #5D8AA6;
-    margin-left: auto;
-    margin-right: auto;
-    width: 700px;
-    height: 500px;
-    padding-bottom: 150px;
-}
-
-#innerDiv {}
-
-#login_register {
-    text-align: center;
-    /* width: 200px;
-    background-color: #5D8AA6;  */
-    padding: 50px;
-}
-
-.carImg {
-    width: 100%;
-    height: 100%;
-}
-
-.carHeader {
-    padding-top: 20px;
-    color: black;
-    text-align: center;
-    position: top;
-}
-
-.carImg:a:hover {
-    background-color: chocolate;
-}
+    #menu {
+        text-align: center;
+        /* background-color: #5D8AA6; */
+    }
+    
+    #CarOverview {
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    #login_register {
+        float: right;
+    }
+    
+    #duration_input {
+        width: 40px;
+    }
+    
+    #filter {
+        margin: auto;
+        text-align: center;
+        padding-bottom: 10px;
+        width: 70%;
+    }
+    
+    #show_car_bttn {
+        margin-top: 10px;
+        padding: 10px;
+    }
+    
+    #loginForm {
+        /* width: 100%; */
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        margin-left: 20px;
+        float: right;
+        background-color: chocolate;
+    }
+    
+    .login {
+        width: 20%;
+        margin: 5px;
+    }
+    
+    .carDiv {
+        background-color: #5D8AA6;
+        margin-left: auto;
+        margin-right: auto;
+        width: 700px;
+        height: 500px;
+        padding-bottom: 150px;
+    }
+    
+    #innerDiv {}
+    
+    .carImg {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .carHeader {
+        padding-top: 20px;
+        color: black;
+        text-align: center;
+        position: top;
+    }
+    
+    .carImg:a:hover {
+        background-color: chocolate;
+    }

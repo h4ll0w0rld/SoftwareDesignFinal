@@ -92,9 +92,6 @@ async function handleRequest(_request: Http.IncomingMessage, _response: Http.Ser
         await connectRoDatabase(dataBaseUrl, "Car");
         mongoCollection.updateOne({"_id":objectId},{$set: url.query});
 
-     
-        
-           
 
     }else if(refUrl.pathname == "/saveBooking"){
 

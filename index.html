@@ -19,25 +19,31 @@
     <div id="login_register"></div>
     <div id="menu">
         <div id="filter">
-            <label for="date">Datum: </label>
-            <input type="date">
-            <label for="time">Zeit: </label>
-            <input type="time">
-            <label for="duration">Dauer (min): </label>
-            <input type="number" min="0" name="" id="">
-            <label for="driveType">Elektrisch</label>
-            <select name="driveType" id="drive_type" onchange="CarSharing.getCarSharingIni().getCarWithDriveType()">
-                <option value="Electric">Elektro</option>
-                <option value="Conventional">Verbrenner</option>
-            </select>
-            <button onclick="showCar(CarSharing.getCarSharingIni().getCar())">Show Cars</button>
+            <form action="" id="filter_form">
+                <label for="date">Datum: </label>
+                <input name="date_input" type="date">
+                <label for="time">Zeit: </label>
+                <input name="time_input" type="time">
+                <br>
+                <label for="duration">Dauer (min): </label>
+                <input id="duration_input" type="number" min="0" name="duration" id="">
+                <label for="driveType">Elektrisch</label>
+
+                <select name="driveType" id="drive_type">
+                         <option value= "Conv" >Verbrenner</option>
+                         <option value= "Electric" >Elektro</option>
+                </select>
+                <br>
+
+                <button id="show_car_bttn" type="button">Autos suchen</button>
+            </form>
         </div>
 
-        <button onclick="testCar()">test</button>
-        <input type="time" id="tester_input">
+
 
         <div id="CarOverview">
-            <label for="searchInput">Suche</label>
+            <label for="searchInput">Suche nach Auto: </label>
+            <br>
             <input type="text" id="searchInput" onclick="showCar()">
 
 

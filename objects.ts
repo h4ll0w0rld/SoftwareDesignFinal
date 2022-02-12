@@ -1,26 +1,37 @@
-
-
 class CarSharing {
 
 
     private user: LoggedInUser[];
     private car: Car[];
+    private booking:IDriveData[];
     currentUser: User | LoggedInUser | Admin;
 
 
     private static carSharingInstance: CarSharing = new CarSharing;
 
-    private constructor() {
-
-
-
-    }
+    private constructor() { }
 
     public static getCarSharingIni(): CarSharing { return this.carSharingInstance; }
 
-    public getUser(): User[] { return this.user; }
+    public async getUser(): Promise<User[]> {
 
-    public getCar(): Car[] { return this.car; }
+        if (!this.user)this.user= <LoggedInUser[]> await getData("user");
+        return this.user;
+
+    }
+
+    public async getCar():Promise<Car[]> {
+        if(!this.car) this.car = <Car[]> await getData("car");
+        return this.car;
+    }
+
+    public async getBooking():Promise<IDriveData[]> {
+        if(!this.booking) this.booking= await getBookingDB();
+    
+        return this.booking;
+    }
+
+
 
     public setUser(_user: LoggedInUser[]) {
         this.user = _user;
@@ -61,27 +72,10 @@ class CarSharing {
         this.updateCarList()
         this.updateUserList();
 
-        //Load Cars
-        //Erzeugen von Standart Benutzer ? 
-
-
     }
 
-    addUser(_user: LoggedInUser): void {
 
-        console.log("user" + _user.userName);
-        addData(_user);
-        this.updateUserList();
 
-    }
-
-    addCar(_car: Car): void {
-
-        console.log("adding Car" + _car);
-        addData(_car);
-        this.updateCarList();
-
-    }
 
     async updateUserList(): Promise<void> {
 
@@ -100,111 +94,41 @@ class CarSharing {
 
     }
 
-    async verifyUsername(_user: LoggedInUser): Promise<boolean> {
-        console.log("verifiing");
 
-        if (!this.user) {
-            await this.updateUserList();
-        }
-        var regExAlphanumeric: RegExp = new RegExp("^[a-z0-9]+$");
-        if (!regExAlphanumeric.test(_user.userName)) return false;
-        //RegEx for charackters
-
-        for (let i: number = 0; i < this.user.length; i++) {
-            if (this.user[i].userName === _user.userName) {
-                console.log("USSSSER ALLREADY THERE")
-                return false;
-            }
-
-        }
-
-        return true;
-
-
-    }
-
-
-
-    async checkLogin(_userInput: LoggedInUser): Promise<boolean> {
-
-        console.log("Checking User...");
-
-        if (!this.user) {
-            await this.updateUserList();
-        }
-
-
-        for (let i: number = 0; i < this.user.length; i++) {
-            if (this.user[i].userName === _userInput.userName && this.user[i].password === _userInput.password) {
-                console.log("User name und passwort stimmen")
-
-                return true;
-
-
-            }
-        }
-
-        return false;
-
-    }
-    async isAdmin(_userInput: LoggedInUser) {
-
-        if (!this.user) {
-            await this.updateUserList();
-        }
-
-
-        for (let i: number = 0; i < this.user.length; i++) {
-            if (this.user[i].userName == _userInput.userName && this.user[i].role == Role.ADMIN) {
-
-
-                return true;
-
-
-            }
-        }
-
-        return false;
-
-
-    }
 
 
     //-------------- returns true for valid input ---------------------------------
-    async addAcc(_userInput: LoggedInUser) {
 
-        if (!this.user) {
-            await this.updateUserList();
-        }
-
-
-        for (let i: number = 0; i < this.user.length; i++) {
-            if (this.user[i].userName === _userInput.userName) {
-
-                return false;
-            }
-        }
-
-        return true;
-
-
-    }
     getCarWithDriveType() {
         console.log("HEy i get called");
 
     }
 
-    async getAvailableCar(_date: Date): Promise<Car[]> {
 
-        if (!this.car) await this.updateCarList();
+
+    async getAvailableCar(_date: IDriveData, _driveType:DriveType): Promise<Car[]> {
+
+        if (!this.car){
+
+            await this.updateCarList();
+        } 
 
         let availableCar: Car[] = new Array();
-
+      
+       
         for (let i: number = 0; i < this.car.length; i++) {
-            for (let e: number = 0; e < this.car[i].planedDrive.length; e++) {
+            console.log("IIIIIIIIIII");
+            let planedDrive:IDriveData[] = await this.car[i].getBookings();
+            for (let e: number = 0; e < planedDrive.length; e++) {
 
-                if (_date >= this.car[i].planedDrive[e].begin && _date <= this.car[i].planedDrive[e].end) break;
-                else availableCar[i] = this.car[i];
+                if (!await this.car[i].isFreeAt(_date)){
+                    console.log("IST SCHON GEBUCHT")
+                    break;
+                }else if(this.car[i].driveType != _driveType.valueOf()){
+                    console.log("IST DER FALSCHE DRIVETYPE")
+                    break;
+                }else availableCar[i] = this.car[i];
+              
 
             }
 
@@ -214,7 +138,15 @@ class CarSharing {
     }
 
 
+    async searchFilter(_date:IDriveData,_driveType:DriveType ){
+        let driveType: DriveType = DriveType.CONVENTIONAL
+       
+        
+        if (_driveType === DriveType.ELECTRIC) driveType = DriveType.ELECTRIC;
+           
+        showCar(await CarSharing.getCarSharingIni().getAvailableCar(_date, driveType))
 
+    }
     async searchCar(_car: string): Promise<Car[]> {
 
         var reg = new RegExp(_car, "gi");
@@ -242,11 +174,9 @@ class CarSharing {
 
 
     }
+
+
 }
-
-
-
-
 
 enum DriveType {
     ELECTRIC, CONVENTIONAL
@@ -254,16 +184,6 @@ enum DriveType {
 enum Role {
     USER, LOGGEDINUSER, ADMIN
 }
-class BookingDate {
-
-    date: string;
-    time: String;
-    duration: number;
-
-}
-
-
-
 
 class Car {
 
@@ -296,14 +216,20 @@ class Car {
 
 
 
+    addCar(): void {
 
+        console.log("adding Car" + this);
+        addData(this);
+        CarSharing.getCarSharingIni().updateCarList();
+
+    }
 
 
     async getBookings(): Promise<IDriveData[]> {
 
         if (!this.planedDrive) {
-
-            this.planedDrive = await getBooking();
+         
+            this.planedDrive = await CarSharing.getCarSharingIni().getBooking();
         }
 
         let bookings: IDriveData[] = new Array(this.planedDrive.length);
@@ -313,6 +239,7 @@ class Car {
             if (this.uuid == this.planedDrive[i].car) {
                 bookings[e] = this.planedDrive[i];
                 e++;
+              
             }
 
         }
@@ -326,33 +253,23 @@ class Car {
     }
 
 
-    async isFreeAt(_time: IDriveData): Promise <boolean>{
+    async isFreeAt(_time: IDriveData): Promise<boolean> {
 
         let bookings: IDriveData[] = await this.getBookings()
-        console.log("***********************")
-        console.log("is to long: "+ this.checkUseTime(_time))
-       
-       
-       // console.log(bookings);
+
         for (let i: number = 0; i < bookings.length; i++) {
-            let beginDate:Date = new Date(bookings[i].begin);
-            let endDate:Date = new Date(bookings[i].end);
+            let beginDate: Date = new Date(bookings[i].begin);
+            let endDate: Date = new Date(bookings[i].end);
 
-           // let currentBooking:IDriveData =  {begin: bookings[i].begin, end:bookings[i].end, username:bookings[i].username, car:bookings[i].car} as IDriveData;            //If given Time is inbetween or arround an already exisiting Time: return = false 
+            //If given Time is inbetween or arround an already exisiting Time: return = false 
             if (_time.begin.getTime() >= beginDate.getTime() && _time.begin.getTime() <= endDate.getTime()) return false;
-
-
             else if (_time.end.getTime() >= beginDate.getTime() && _time.end.getTime() <= endDate.getTime()) return false;
-
-
             else if (_time.begin <= beginDate && _time.end >= endDate) return false;
         }
 
         return true;
 
     }
-
-
 
     checkDuration(_time: IDriveData): boolean {
 
@@ -363,24 +280,23 @@ class Car {
         return true;
 
     }
-    checkUseTime(_time: IDriveData):boolean {
-       
-        let begin:number = (_time.begin.getHours()*60)+_time.begin.getMinutes();
-        let end:number = (_time.end.getHours()*60)+_time.end.getMinutes();
-    
-        let earliestPosib:string[] = this.earliestUsableTime.split(":",2);
-        let latestPosib:string[] = this.latestUsageTime.split(":",2);
+    checkUseTime(_time: IDriveData): boolean {
+
+        let begin: number = (_time.begin.getHours() * 60) + _time.begin.getMinutes();
+        let end: number = (_time.end.getHours() * 60) + _time.end.getMinutes();
+
+        let earliestPosib: string[] = this.earliestUsableTime.split(":", 2);
+        let latestPosib: string[] = this.latestUsageTime.split(":", 2);
+        let earlyNumb: number = parseInt(earliestPosib[0]) * 60 + parseInt(earliestPosib[1]);
+        let lateNumb: number = parseFloat(latestPosib[0]) * 60 + parseFloat(latestPosib[1]);
         
-    
-        let earlyNumb:number = parseInt(earliestPosib[0])*60 + parseInt(earliestPosib[1]) ;
-        let lateNumb:number = parseFloat(latestPosib[0])*60 + parseFloat(latestPosib[1]);
-   
         if (begin <= lateNumb && end >= earlyNumb) return true;
 
         return false;
 
     }
 
+   
 
 
 
@@ -394,17 +310,8 @@ interface IDriveData {
 
 }
 
-interface IBooking {
-    driveData: IDriveData;
-
-}
 
 
-class Drive {
-    dateOfBooking: IDriveData;
-    duration: number;
-    // car: Car;
-}
 
 interface ICarDAO {
 
@@ -422,12 +329,6 @@ interface ICarDAO {
 }
 
 
-
-
-
-
-
-
 class User {
 
     role: Role;
@@ -437,28 +338,40 @@ class User {
 
 
     }
-    static async login(_user: LoggedInUser) {
-        let carShare: CarSharing = CarSharing.getCarSharingIni();
-        if (await carShare.checkLogin(_user)) {
-            sessionStorage.setItem("user", JSON.stringify(_user));
-            console.log("Login succesful");
-            window.location.reload();
-            //showLogin();
-        }
+    // static async login(_user: LoggedInUser) {
+    //     let carShare: CarSharing = CarSharing.getCarSharingIni();
+    //     if (await carShare.checkLogin(_user)) {
+    //         sessionStorage.setItem("user", JSON.stringify(_user));
+    //         console.log("Login succesful");
+    //         window.location.reload();
+    //         //showLogin();
+    //     }
 
 
 
 
-    }
-    static async register(_user: LoggedInUser) {
-        let carShare: CarSharing = CarSharing.getCarSharingIni();
-        if (await carShare.addAcc(_user)) {
-            carShare.addUser(_user);
-            console.log("Login succsesful ! ")
-        } else console.log("User allready exists");
+    // }
 
 
-    }
+
+    // async verifyUsername(_userInput: LoggedInUser) {
+    //     let user:LoggedInUser[] | Admin [] = CarSharing.getCarSharingIni().getUser();
+
+    //     for (let i: number = 0; i < user.length; i++) {
+    //         if (user[i].userName === this.userName) {
+
+    //             return false;
+    //         }
+    //     }
+
+    //     return true;
+
+
+    // }
+
+
+
+
 
 
 
@@ -477,12 +390,137 @@ class LoggedInUser extends User {
         this.password = _password;
     }
 
-    bookCar() {
+
+    addUser(): void {
+
+        addData(this);
+        CarSharing.getCarSharingIni().updateUserList();
+
+    }
+
+    async verifyUsername(): Promise<boolean> {
+       
+        let user: LoggedInUser[] | Admin[] = <LoggedInUser[] | Admin[]>await CarSharing.getCarSharingIni().getUser();
+
+        //RegEx for charackters
+        var regExAlphanumeric: RegExp = new RegExp("^[a-z0-9]+$");
+        if (!regExAlphanumeric.test(this.userName.toLowerCase())) return false;
+
+
+        for (let i: number = 0; i < user.length; i++) {
+
+            if (user[i].userName === this.userName)  return false;
+    
+        }
+
+        return true;
+
+
+    }
+    async register() {
+
+        if (this.verifyUsername()) {
+            this.addUser();
+            console.log("Login succsesful ! ");
+
+        } else console.log("User allready exists");
+
+
+    }
+
+
+    async checkLogin(_userInput: LoggedInUser): Promise<boolean> {
+
+        console.log("Checking User...");
+        let user: LoggedInUser[] | Admin[] = <LoggedInUser[] | Admin[]>await CarSharing.getCarSharingIni().getUser();
+
+        for (let i: number = 0; i < user.length; i++) {
+            if (user[i].userName === _userInput.userName && user[i].password === _userInput.password) {
+
+                console.log("User name und passwort stimmen");
+
+                return true;
+
+            }
+        }
+
+        return false;
+
+    }
+
+
+    async isAdmin(_userInput: LoggedInUser) {
+
+        let user: LoggedInUser[] | Admin[] = <LoggedInUser[] | Admin[]>await CarSharing.getCarSharingIni().getUser();
+
+        for (let i: number = 0; i < user.length; i++) {
+
+            if (user[i].userName == this.userName && user[i].role == Role.ADMIN) return true;
+
+        }
+
+        return false;
+
+
+    }
+
+    async showUpcommingDrive ():Promise<IDriveData[]>{
+    
+        let bookings:IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+
+        let upBooking:IDriveData[] = new Array(bookings.length);
+
+        let e:number = 0;
+        for(let i:number = 0; i < bookings.length; i++){
+         
+            let bookingBegin:Date = new Date(bookings[i].begin);
+            if(bookingBegin.getTime() > +new Date().getTime() && this.userName === bookings[i].username){
+                upBooking[e] = bookings[i];
+                e++
+                
+            } 
+        }
+        let finalBooking:IDriveData[] = new Array(e);
+        for(let a:number = 0; a<e; a++){
+            finalBooking[a] = upBooking[a];
+
+        }
+         console.log(finalBooking)
+        return finalBooking;
+    }
+
+    async getRecentDrive(){
+     
+        let bookings:IDriveData[] = await CarSharing.getCarSharingIni().getBooking();
+
+        let resBooking:IDriveData[] = new Array();
+
+        
+        let e:number = 0;
+        for(let i:number = 0; i < bookings.length; i++){
+         
+            let bookingBegin:Date = new Date(bookings[i].begin);
+            if(bookingBegin.getTime() < +new Date().getTime() && this.userName === bookings[i].username){
+                resBooking[e] = bookings[i];
+                e++
+                
+            } 
+        }
+        let finalBooking:IDriveData[] = new Array(e);
+        for(let a:number = 0; a<e; a++){
+            finalBooking[a] = resBooking[a];
+
+        }
+
+       console.log(finalBooking)
+        return finalBooking;
 
 
     }
 
 }
+
+
 
 class Admin extends LoggedInUser {
     constructor(_userName: string, _password: string) {

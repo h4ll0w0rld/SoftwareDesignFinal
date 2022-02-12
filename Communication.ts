@@ -42,14 +42,13 @@ async function saveBooking(_booking:IDriveData) {
 }
 
 
-async function getBooking(): Promise<IDriveData[]> {
+async function getBookingDB(): Promise<IDriveData[]> {
 
     let url = refUrl + "/getBooking";
 
     let response: string = await (await fetch(url, { method: "get" })).text();
+    console.log(response);
     let bookings:IDriveData[] =  JSON.parse(response);
-
-   // console.log(bookings[0].begin)
 
     return bookings;
 

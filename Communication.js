@@ -23,11 +23,11 @@ async function saveBooking(_booking) {
     let url = refUrl + "/saveBooking" + "?" + query;
     await fetch(url, { method: "get" });
 }
-async function getBooking() {
+async function getBookingDB() {
     let url = refUrl + "/getBooking";
     let response = await (await fetch(url, { method: "get" })).text();
+    console.log(response);
     let bookings = JSON.parse(response);
-    // console.log(bookings[0].begin)
     return bookings;
 }
 async function getData(_dataType) {

@@ -6,16 +6,27 @@ let admin = new Admin("admin", "admin");
 //let userArray: LoggedInUser[] = new Array(user1, user2);
 let carSharingApp = CarSharing.getCarSharingIni();
 //console.log(carSharingApp.getCurrentUSer())
-let currentUser = CarSharing.getCarSharingIni().getCurrentUser();
-async function testCar() {
-    let input = document.getElementById("tester_input");
-    console.log(input.value);
-    let testDate = new Date("T09:22");
-    console.log(testDate);
+//let currentUser: any = CarSharing.getCarSharingIni().getCurrentUser();
+let bttn = document.getElementById("show_car_bttn");
+bttn.addEventListener("click", filterEvent);
+async function filterEvent() {
+    let dateInput = document.getElementById("filter_form");
+    let formData = new FormData(dateInput);
+    let dateBeginn = new Date(formData.get("date_input") + "T" + formData.get("time_input"));
+    let inputTime = { begin: dateBeginn, end: new Date(dateBeginn.getTime() + 60000 * parseFloat(formData.get("duration"))), username: user.userName, car: null };
+    let driveType = DriveType.CONVENTIONAL;
+    //console.log("starting offf filer Event");
+    if (formData.get("driveType") === "Electric") {
+        driveType = DriveType.ELECTRIC;
+    }
+    //console.log(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType));
+    showCar(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType));
     //console.log(await CarSharing.getCarSharingIni().getCar())
+    console.log("WWWWWWWWWWWWWWWWWWWWW");
+    console.log(await user.showUpcommingDrive());
 }
 carSharingApp.startApp();
-let user = new LoggedInUser("nilssss", "wildeTests");
+let user = new LoggedInUser("nils1", "wildeTests");
 //addData(user);
 //let car: Car = new Car("https://imgr1.auto-motor-und-sport.de/11-2021-2022-Ford-Mustang-Shelby-GT500-Heritage-Edition-169FullWidth-daf7318a-1850564.jpg", "Ford Mustang Shelby GT500 Heritage Edition")
 //addData(car);
@@ -41,12 +52,22 @@ function loginOption() {
         loginDiv.append(logginButton);
     }
     if (currentUser.role == Role.LOGGEDINUSER || currentUser.role == Role.ADMIN) {
+        let user = currentUser;
+        let activeUser = new LoggedInUser(user.userName, user.password);
         let logOutBttn = document.createElement("button");
         logOutBttn.innerHTML = "Abmelden";
         logOutBttn.addEventListener("click", CarSharing.getCarSharingIni().logOutCurrentUser);
         let loginDiv = document.getElementById("login_register");
         loginDiv.append(logOutBttn);
         console.log("User logged Out");
+        let upBookingsBttn = document.createElement("button");
+        upBookingsBttn.innerHTML = "bevorstehende fahrten";
+        upBookingsBttn.addEventListener("click", () => activeUser.showUpcommingDrive());
+        loginDiv.append(upBookingsBttn);
+        let resBookingsBttn = document.createElement("button");
+        resBookingsBttn.innerHTML = "vergangene fahrten";
+        resBookingsBttn.addEventListener("click", () => activeUser.getRecentDrive());
+        loginDiv.append(resBookingsBttn);
     }
 }
 //showLogin();
@@ -62,11 +83,13 @@ async function showLogin() {
     labelName.innerHTML = "Username : ";
     let inputName = document.createElement("input");
     inputName.setAttribute("name", "username");
+    inputName.setAttribute("class", "login");
     let labelPasswort = document.createElement("label");
     labelPasswort.innerHTML = "Password";
     let inputPasswort = document.createElement("input");
     inputPasswort.setAttribute("type", "password");
     inputPasswort.setAttribute("name", "password");
+    inputPasswort.setAttribute("class", "login");
     let submittButton = document.createElement("button");
     submittButton.setAttribute("id", "submittLoginBttn");
     submittButton.innerHTML = "Bestätigen";
@@ -79,10 +102,9 @@ async function showLogin() {
         let form = document.getElementById("loginForm");
         let formData = new FormData(form);
         let loggedInUser = new LoggedInUser(formData.get("username"), formData.get("password"));
-        console.log("Username : " + loggedInUser.userName + " Password : " + loggedInUser.password);
-        if (await CarSharing.getCarSharingIni().isAdmin(loggedInUser))
+        if (await loggedInUser.isAdmin(loggedInUser))
             loggedInUser = new Admin(loggedInUser.userName, loggedInUser.password);
-        if (await CarSharing.getCarSharingIni().checkLogin(loggedInUser)) {
+        if (loggedInUser.checkLogin(loggedInUser)) {
             CarSharing.getCarSharingIni().setCurrentUser(loggedInUser);
             console.log("User is now logged in");
             window.location.reload();
@@ -118,9 +140,9 @@ function showRegister() {
         let formData = new FormData(form);
         let loggedInUser = new LoggedInUser(formData.get("username"), formData.get("password"));
         //-----------------Prove Username------------------------
-        if (await CarSharing.getCarSharingIni().verifyUsername(loggedInUser)) {
+        if (await loggedInUser.verifyUsername()) {
             CarSharing.getCarSharingIni().setCurrentUser(loggedInUser);
-            User.register(loggedInUser);
+            loggedInUser.register();
             window.location.reload();
         }
         else
@@ -186,7 +208,7 @@ function showAddCarForm() {
         if (formData.get("driveType") === "Conv")
             driveType = DriveType.CONVENTIONAL;
         let newCar = new Car("", formData.get("model"), driveType, earliestUsableTimeInput.value, latestUsageTimeInput.value, parseFloat(formData.get("maxUseTime")), parseFloat(formData.get("flatRate")), parseFloat(formData.get("pricePerMinute")), formData.get("imageLink"));
-        CarSharing.getCarSharingIni().addCar(newCar);
+        newCar.addCar();
     });
     document.body.append(div);
     div.append(carForm);
@@ -226,6 +248,7 @@ function showBokkingForm(_carDiv, _car) {
 }
 async function showSearchResults(_car, _time) {
     let car = new Car(_car.uuid, _car.modelDescription, _car.driveType, _car.earliestUsableTime, _car.latestUsageTime, _car.maxUseTime, _car.flateRate, _car.pricePerMinute, _car.image);
+    console.log("called");
     if (!await car.isFreeAt(_time)) {
         console.log("Das Auto ist in diesem Zeitraum schon gebucht.");
         return;
@@ -256,6 +279,7 @@ async function showSearchResults(_car, _time) {
     }
 }
 function showCar(_car) {
+    console.log(_car);
     let innerDiv = document.getElementById("innerDiv");
     while (innerDiv.firstChild)
         innerDiv.removeChild(innerDiv.firstChild);
