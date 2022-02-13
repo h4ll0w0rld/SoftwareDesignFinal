@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Http = require("http");
 const Url = require("url");
 const Mongo = require("mongodb");
-const bson_1 = require("bson");
-let mongoCollection;
+let user;
+let car;
+let booking;
 let dataBaseUrl = "mongodb+srv://admin:hallodasistmeincluster@cluster0.0enhn.mongodb.net/CarShare?retryWrites=true&w=majority";
 let port = Number(process.env.PORT);
 if (!port)
@@ -15,8 +16,7 @@ async function startServer(_port) {
     let server = Http.createServer();
     server.addListener("request", handleRequest);
     server.listen(port);
-}
-function handleListen() {
+    connectRoDatabase(dataBaseUrl);
 }
 async function handleRequest(_request, _response) {
     console.log("I can here you ! :)");
@@ -25,52 +25,36 @@ async function handleRequest(_request, _response) {
     let refUrl = new URL(_request.url, "http://localhost");
     let url = Url.parse(_request.url, true);
     if (refUrl.pathname == "/saveUser") {
-        console.log("Saving new User....");
-        await connectRoDatabase(dataBaseUrl, "User");
-        mongoCollection.insertOne(url.query);
+        user.insertOne(url.query);
         _response.end();
     }
     else if (refUrl.pathname == "/saveCar") {
-        console.log("Saving new Car....");
-        await connectRoDatabase(dataBaseUrl, "Car");
-        mongoCollection.insertOne(url.query);
+        car.insertOne(url.query);
         _response.end();
     }
     else if (refUrl.pathname == "/getUser") {
-        console.log("searching for User...");
-        await connectRoDatabase(dataBaseUrl, "User");
-        _response.write(JSON.stringify(await (mongoCollection.find().toArray())));
+        _response.write(JSON.stringify(await (user.find().toArray())));
         _response.end();
     }
     else if (refUrl.pathname == "/getCar") {
-        console.log("searching for Cars...");
-        await connectRoDatabase(dataBaseUrl, "Car");
-        _response.write(JSON.stringify(await (mongoCollection.find().toArray())));
+        _response.write(JSON.stringify(await (car.find().toArray())));
         _response.end();
     }
-    else if (refUrl.pathname == "/updateOne") {
-        console.log("updating....");
-        let id = refUrl.searchParams.get("uuid");
-        var objectId = new bson_1.ObjectID(id);
-        await connectRoDatabase(dataBaseUrl, "Car");
-        mongoCollection.updateOne({ "_id": objectId }, { $set: url.query });
-    }
     else if (refUrl.pathname == "/saveBooking") {
-        await connectRoDatabase(dataBaseUrl, "Bookings");
-        mongoCollection.insertOne(url.query);
+        booking.insertOne(url.query);
         _response.end();
     }
     else if (refUrl.pathname == "/getBooking") {
-        await connectRoDatabase(dataBaseUrl, "Bookings");
-        _response.write(JSON.stringify(await (mongoCollection.find().toArray())));
+        _response.write(JSON.stringify(await (booking.find().toArray())));
         _response.end();
     }
 }
-async function connectRoDatabase(_url, _database) {
+async function connectRoDatabase(_url) {
     let mongoClient = new Mongo.MongoClient(_url);
     await mongoClient.connect();
-    mongoCollection = mongoClient.db("CarShare").collection(_database);
-    console.log("Database is connected", mongoCollection != undefined);
-    console.log(_database);
+    user = mongoClient.db("CarShare").collection("User");
+    car = mongoClient.db("CarShare").collection("Car");
+    booking = mongoClient.db("CarShare").collection("Bookings");
+    console.log("User is connected", user != undefined);
 }
 //# sourceMappingURL=NodeServer.js.map

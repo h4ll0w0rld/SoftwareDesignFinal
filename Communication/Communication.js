@@ -41,11 +41,10 @@ async function getData(_dataType) {
         userData = JSON.parse(response);
     }
     if (_dataType == "Car") {
-        console.log("getting asked");
-        carData = JSON.parse(response);
+        carData = await JSON.parse(response);
         finalCar = new Array(carData.length);
         for (let i = 0; i < carData.length; i++) {
-            finalCar[i] = new Car(carData[i]._id, carData[i].modelDescription, carData[i].driveType, carData[i].earliestUsableTime, carData[i].latestUsageTime, carData[i].maxUseTime, carData[i].flateRate, carData[i].pricePerMinute, carData[i].image);
+            finalCar[i] = new Car(carData[i]._id, carData[i].modelDescription, carData[i].driveType, carData[i].earliestUseTime, carData[i].lastUseTime, parseFloat(carData[i].maxUseTime), parseFloat(carData[i].flateRate), parseFloat(carData[i].pricePerMin), carData[i].image);
         }
     }
     return userData || finalCar;

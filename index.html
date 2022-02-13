@@ -7,14 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="style.css">
-    <script src="Communication.js" defer></script>
-    <script src="objects.js" defer></script>
-    <script src="main.js" defer></script>
+    <script src="Communication\Communication.js" defer></script>
+    <script src="Object\CarSharing.js" defer></script>
+    <script src="Object\User.js" defer></script>
+    <script src="Object\Interface_Enum.js" defer></script>
+    <script src="Object\Car.js" defer></script>
+    <script src="UI\Ui.js" defer></script>
+    <script src="UnitTest\UnitTest.js" defer></script>
 </head>
 
 <body>
-    <!-- <h1>Hallo</h1> <button id="Log_In_Button" onclick="showLogin()">Log-In</button>
-    <button id="Register_Button" onclick="showRegister()">Register</button> -->
 
     <div id="login_register"></div>
     <div id="menu">
@@ -26,7 +28,7 @@
                 <input name="time_input" type="time">
                 <br>
                 <label for="duration">Dauer (min): </label>
-                <input id="duration_input" type="number" min="0" name="duration" id="">
+                <input id="duration_input" type="number" min="0" name="duration">
                 <label for="driveType">Elektrisch</label>
 
                 <select name="driveType" id="drive_type">
@@ -35,32 +37,40 @@
                 </select>
                 <br>
 
-                <button id="show_car_bttn" type="button" onclick="filterEvent()">Autos suchen</button>
+                <button id="show_car_bttn" type="button" onclick="Gui.showFilterdCar()">Autos suchen</button>
             </form>
 
 
+            <div id="statistic_buttons"></div>
+            <div id="user_statistic">
+                <!-- <button type="button" onclick="Gui.showNumbBooking()">Fahrten insgesammt</button>
+                <button onclick="Gui.showEveragePrice()">Durchschnittspreis</button> -->
+
+            </div>
+
+            <div id="car_overview">
+                <label for="searchInput">Suche nach Auto: </label>
+                <br>
+                <input type="text" id="search_input">
 
 
-            <button>Fahrten insgesammt</button>
-            <button>Durchschnittspreis</button>
+            </div>
+            <div id="inner_div"></div>
+            <div id="add_car">
+
+
+
+
+
+            </div>
+
+
+
         </div>
 
 
 
-        <div id="CarOverview">
-            <label for="searchInput">Suche nach Auto: </label>
-            <br>
-            <input type="text" id="searchInput" onclick="showCar()">
-
-
-        </div>
-        <div id="innerDiv"></div>
-        <div id="add_Car">
-
-        </div>
     </div>
-
-
 
 
 

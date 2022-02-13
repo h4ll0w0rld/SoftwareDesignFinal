@@ -1,9 +1,8 @@
     #menu {
         text-align: center;
-        /* background-color: #5D8AA6; */
     }
     
-    #CarOverview {
+    #car_overview {
         margin-left: auto;
         margin-right: auto;
     }
@@ -28,8 +27,7 @@
         padding: 10px;
     }
     
-    #loginForm {
-        /* width: 100%; */
+    #login_form {
         margin-bottom: 30px;
         padding-bottom: 20px;
         margin-left: 20px;
@@ -42,29 +40,22 @@
         margin: 5px;
     }
     
-    .carDiv {
+    .car_div {
         background-color: #5D8AA6;
         margin-left: auto;
         margin-right: auto;
         width: 700px;
-        height: 500px;
-        padding-bottom: 150px;
+        height: auto;
     }
     
-    #innerDiv {}
-    
-    .carImg {
+    .car_img {
         width: 100%;
         height: 100%;
     }
     
-    .carHeader {
+    .car_header {
         padding-top: 20px;
         color: black;
         text-align: center;
         position: top;
-    }
-    
-    .carImg:a:hover {
-        background-color: chocolate;
     }

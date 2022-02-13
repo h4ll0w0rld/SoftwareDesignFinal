@@ -3,7 +3,6 @@ let carSharingApp = CarSharing.getCarSharingIni();
 carSharingApp.startApp();
 loginOption();
 async function filterEvent() {
-    //showCar(await CarSharing.getCarSharingIni().getCar());
     let dateInput = document.getElementById("filter_form");
     let formData = new FormData(dateInput);
     let dateBeginn = new Date(formData.get("date_input") + "T" + formData.get("time_input"));
@@ -13,7 +12,6 @@ async function filterEvent() {
         driveType = DriveType.ELECTRIC;
     }
     showCar(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType));
-    // console.log(await CarSharing.getCarSharingIni().getAvailableCar(inputTime, driveType))
 }
 function loginOption() {
     let currentUser = CarSharing.getCarSharingIni().getCurrentUser();
@@ -248,7 +246,7 @@ async function showSearchResults(_car, _time) {
         let bookingBttn = document.createElement("button");
         bookingBttn.innerHTML = "Jetzt Buchen";
         bookingBttn.setAttribute("type", "button");
-        responseHtml.innerHTML = "Das Auto wurde erfolgreich gebucht! Der Preis beträgt" + car.calculatePrice(_time);
+        responseHtml.innerHTML = "Das Auto kann für " + car.calculatePrice(_time) + "Euro gebucht werden.";
         form.append(responseHtml);
         bookingBttn.addEventListener("click", async function () {
             saveBooking(_time);
@@ -259,6 +257,44 @@ async function showSearchResults(_car, _time) {
     }
     else if (CarSharing.getCarSharingIni().getCurrentUser().role == Role.USER) {
         showLogin();
+    }
+}
+let firstTimeNumb = true;
+async function showNumbBooking() {
+    console.log("fahrten !!!!!");
+    let currentUser = CarSharing.getCarSharingIni().getCurrentUser();
+    let user = new LoggedInUser(currentUser.userName, currentUser.password);
+    let statDiv = document.getElementById("user_statistic");
+    //  while (statDiv.firstChild) statDiv.removeChild(statDiv.firstChild);
+    let numBookings = document.createElement("p");
+    console.log("Sie haben insgesammt " + await user.numbOfBooking() + " fahrten Gebucht");
+    numBookings.innerHTML = "Sie haben insgesammt " + await user.numbOfBooking() + " fahrten Gebucht";
+    if (firstTimeNumb) {
+        statDiv.append(numBookings);
+        firstTimeNumb = false;
+    }
+}
+let firstTimePrice = true;
+async function showEveragePrice() {
+    let currentUser = CarSharing.getCarSharingIni().getCurrentUser();
+    let user = new LoggedInUser(currentUser.userName, currentUser.password);
+    let statDiv = document.getElementById("user_statistic");
+    //while (statDiv.firstChild) statDiv.removeChild(statDiv.firstChild);
+    let numBookings = document.createElement("p");
+    console.log("Sie haben insgesammt " + await user.everagePrice() + " Euro bezahlt");
+    numBookings.innerHTML = "Sie haben durchschnittlich " + await user.everagePrice() + " Euro gezahlt";
+    if (firstTimePrice) {
+        statDiv.append(numBookings);
+        firstTimePrice = false;
+    }
+}
+async function showBooking(_booking) {
+    let statDiv = document.getElementById("user_statistic");
+    for (let i = 0; i < _booking.length; i++) {
+        let paragraph = document.createElement("p");
+        let car = await CarSharing.getCarSharingIni().getCarByID(_booking[i].car);
+        paragraph.innerHTML = "Sie haben vom: " + _booking[i].begin + " bis: " + _booking[i].end + " das Auto: " + car.modelDescription + "gebucht";
+        statDiv.append(paragraph);
     }
 }
 function showCar(_car) {
