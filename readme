@@ -1,0 +1,23 @@
+Software Design Abgabe: 
+
+
+Welcome to my Project :) 
+
+There are two ways to get it running: 
+
+1. Go to my Git and clone repository (Link in "Abgabeinfo");
+2. extract the zip and drag folder into VSC. --> "yes i am a trusted author ;) "
+
+
+Start things of: 
+1. start node Server 
+        -navigate to Server Folder and run: node NodeServer.js
+2. open index.html in your Browser (either via Liveserver or just drag and drop);
+
+If you need Admin rights:
+     username= admin password = admin 
+
+
+
+
+
